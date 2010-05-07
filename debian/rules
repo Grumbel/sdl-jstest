@@ -54,6 +54,7 @@ install: build
 	# Add here commands to install the package into debian/sdl-jstest.
 	# $(MAKE) DESTDIR=$(CURDIR)/debian/sdl-jstest install
 	install sdl-jstest $(CURDIR)/debian/sdl-jstest/usr/bin/
+	install sdl-jstest.1 $(CURDIR)/debian/sdl-jstest/usr/share/man/man1/
 
 # Build architecture-independent files here.
 binary-indep: install
