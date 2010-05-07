@@ -1,22 +1,20 @@
-/*  $Id$
-**  sdl-jstest - Joystick Test Program for SDL
-**  Copyright (C) 2007 Ingo Ruhnke <grumbel@gmx.de>
-**
-**  This program is free software; you can redistribute it and/or
-**  modify it under the terms of the GNU General Public License
-**  as published by the Free Software Foundation; either version 2
-**  of the License, or (at your option) any later version.
-**
-**  This program is distributed in the hope that it will be useful,
-**  but WITHOUT ANY WARRANTY; without even the implied warranty of
-**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-**  GNU General Public License for more details.
-** 
-**  You should have received a copy of the GNU General Public License
-**  along with this program; if not, write to the Free Software
-**  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
-**  02111-1307, USA.
-*/
+//  sdl-jstest - Joystick Test Program for SDL
+//  Copyright (C) 2007 Ingo Ruhnke <grumbel@gmx.de>
+//
+//  This program is free software; you can redistribute it and/or
+//  modify it under the terms of the GNU General Public License
+//  as published by the Free Software Foundation; either version 2
+//  of the License, or (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+// 
+//  You should have received a copy of the GNU General Public License
+//  along with this program; if not, write to the Free Software
+//  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+//  02111-1307, USA.
 
 #include <SDL/SDL.h>
 #include <assert.h>
@@ -78,10 +76,11 @@ void print_help(const char* prg)
          "/dev/input/jsX interface\n");
   printf("\n");
   printf("Options:\n");
+  printf("  --help             Print this help\n");
+  printf("  --version          Print version number and exit\n");
   printf("  --list             Search for available joysticks and list their properties\n");
   printf("  --test  JOYNUM     Display a graphical representation of the current joystick state\n");
   printf("  --event JOYNUM     Display the events that are recieved from the joystick\n");
-  printf("  --help             Print this help\n");
   printf("\n");
   printf("Examples:\n");
   printf("  %s --list\n", prg);
@@ -111,6 +110,11 @@ int main(int argc, char** argv)
         {
           print_help(argv[0]);
         }
+      if (argc == 2 && (strcmp(argv[1], "--version") == 0))
+      {
+        printf("sdl-jstest 0.1.0\n");
+        exit(EXIT_SUCCESS);
+      }
       else if (argc == 2 && (strcmp(argv[1], "--list") == 0 ||
                              (strcmp(argv[1], "-l") == 0)))
         {
