@@ -28,7 +28,7 @@ build-stamp: configure-stamp
 
 	# Add here commands to compile the package.
 	# $(MAKE)
-	scons
+	make
 	#docbook-to-man debian/sdl-jstest.sgml > sdl-jstest.1
 
 	touch $@
