@@ -3,8 +3,8 @@
 all: sdl-jstest sdl-jstest.1
 
 clean:
-	rm sdl-jstest
-	rm sdl-jstest.1
+	rm -f sdl-jstest
+	rm -f sdl-jstest.1
 
 sdl-jstest: sdl-jstest.c
 	$(CC) -o $@ $< -std=c99 -Wall `sdl-config --cflags --libs` -lcurses
