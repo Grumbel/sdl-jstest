@@ -89,8 +89,9 @@
   <refsect1>
     <title>SDL Configuration</title>
     <para>
-      What SDL detects as axis is treated as a hat and which as normal
-      axis can be configured with the environment variable
+      What SDL detects as axis, what is treated as a hat and what is
+      handled as normal axis can be configured with the environment
+      variable
       <envar>SDL_LINUX_JOYSTICK:</envar>
     </para>
 
