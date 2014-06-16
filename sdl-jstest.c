@@ -215,6 +215,7 @@ int main(int argc, char** argv)
 
               default:
                 fprintf(stderr, "Error: Unhandled event type: %d\n", event.type);
+                break;
             }
           }
 
@@ -330,11 +331,11 @@ int main(int argc, char** argv)
               break;
 
             case SDL_JOYBUTTONDOWN:
-              printf("SDL_JOYBUTTONUP: joystick: %d button: %d state: %d\n",
+              printf("SDL_JOYBUTTONDOWN: joystick: %d button: %d state: %d\n",
                      event.jbutton.which, event.jbutton.button, event.jbutton.state);
               break;
             case SDL_JOYBUTTONUP:
-              printf("SDL_JOYBUTTONDOWN: joystick: %d button: %d state: %d\n",
+              printf("SDL_JOYBUTTONUP: joystick: %d button: %d state: %d\n",
                      event.jbutton.which, event.jbutton.button, event.jbutton.state);
               break;
 
@@ -355,6 +356,7 @@ int main(int argc, char** argv)
 
             default:
               fprintf(stderr, "Error: Unhandled event type: %d\n", event.type);
+              break;
           }
         }
         SDL_JoystickClose(joy);
