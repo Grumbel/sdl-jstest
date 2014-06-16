@@ -57,7 +57,7 @@ int str2int(const char* str, int* val)
   return 1;
 }
 
-void print_joystick_info(int joy_idx, SDL_Joystick* joy)
+void print_joystick_info(int joy_idx, SDL_Joystick* joy, SDL_GameController* gamepad)
 {
   SDL_JoystickGUID guid = SDL_JoystickGetGUID(joy);
   char guid_str[1024];
@@ -70,6 +70,16 @@ void print_joystick_info(int joy_idx, SDL_Joystick* joy)
   printf("Number of Buttons: %2d\n", SDL_JoystickNumButtons(joy));
   printf("Number of Hats:    %2d\n", SDL_JoystickNumHats(joy));
   printf("Number of Balls:   %2d\n", SDL_JoystickNumBalls(joy));
+  printf("GameController:\n");
+  if (!gamepad)
+  {
+    printf("  not a gamepad\n");
+  }
+  else
+  {
+    printf("  Name:    '%s'\n", SDL_GameControllerName(gamepad));
+    printf("  Mapping: '%s'\n", SDL_GameControllerMappingForGUID(guid));
+  }
   printf("\n");
 }
 
@@ -101,7 +111,7 @@ int main(int argc, char** argv)
   }
 
   // FIXME: We don't need video, but without it SDL will fail to work in SDL_WaitEvent()
-  if(SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0)
+  if(SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) < 0)
   {
     fprintf(stderr, "Unable to init SDL: %s\n", SDL_GetError());
     exit(1);
@@ -140,7 +150,12 @@ int main(int argc, char** argv)
           }
           else
           {
-            print_joystick_info(joy_idx, joy);
+            SDL_GameController* gamepad = SDL_GameControllerOpen(joy_idx);
+            print_joystick_info(joy_idx, joy, gamepad);
+            if (gamepad)
+            {
+              SDL_GameControllerClose(gamepad);
+            }
             SDL_JoystickClose(joy);
           }
         }
@@ -319,7 +334,7 @@ int main(int argc, char** argv)
       }
       else
       {
-        print_joystick_info(joy_idx, joy);
+        print_joystick_info(joy_idx, joy, NULL);
 
         printf("Entering joystick test loop, press Ctrl-c to exit\n");
         int quit = 0;
