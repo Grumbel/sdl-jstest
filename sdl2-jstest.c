@@ -110,6 +110,10 @@ int main(int argc, char** argv)
     exit(1);
   }
 
+  // SDL2 will only report events when the window has focus, so set
+  // this hint as we don't have a window
+  SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
+
   // FIXME: We don't need video, but without it SDL will fail to work in SDL_WaitEvent()
   if(SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) < 0)
   {
@@ -350,11 +354,12 @@ int main(int argc, char** argv)
               break;
 
             case SDL_JOYBUTTONDOWN:
-              printf("SDL_JOYBUTTONUP: joystick: %d button: %d state: %d\n",
+              printf("SDL_JOYBUTTONDOWN: joystick: %d button: %d state: %d\n",
                      event.jbutton.which, event.jbutton.button, event.jbutton.state);
               break;
+
             case SDL_JOYBUTTONUP:
-              printf("SDL_JOYBUTTONDOWN: joystick: %d button: %d state: %d\n",
+              printf("SDL_JOYBUTTONUP: joystick: %d button: %d state: %d\n",
                      event.jbutton.which, event.jbutton.button, event.jbutton.state);
               break;
 
@@ -368,6 +373,34 @@ int main(int argc, char** argv)
                      event.jball.which, event.jball.ball, event.jball.xrel, event.jball.yrel);
               break;
 
+            case SDL_JOYDEVICEADDED:
+              printf("SDL_JOYDEVICEADDED which:%d\n", event.jdevice.which);
+              break;
+
+            case SDL_JOYDEVICEREMOVED:
+              printf("SDL_JOYDEVICEREMOVED which:%d\n", event.jdevice.which);
+              break;
+
+            case SDL_CONTROLLERBUTTONDOWN:
+              printf("SDL_CONTROLLERBUTTONDOWN\n");
+              break;
+
+            case SDL_CONTROLLERBUTTONUP:
+              printf("SDL_CONTROLLERBUTTONUP\n");
+              break;
+
+            case SDL_CONTROLLERDEVICEADDED:
+              printf("SDL_CONTROLLERDEVICEADDED which:%d\n", event.cdevice.which);
+              break;
+
+            case SDL_CONTROLLERDEVICEREMOVED:
+              printf("SDL_CONTROLLERDEVICEREMOVED which:%d\n",  event.cdevice.which);
+              break;
+
+            case SDL_CONTROLLERDEVICEREMAPPED:
+              printf("SDL_CONTROLLERDEVICEREMAPPED which:%d\n", event.cdevice.which);
+              break;
+
             case SDL_QUIT:
               quit = 1;
               printf("Recieved interrupt, exiting\n");
@@ -375,6 +408,7 @@ int main(int argc, char** argv)
 
             default:
               fprintf(stderr, "Error: Unhandled event type: %d\n", event.type);
+              break;
           }
         }
         SDL_JoystickClose(joy);
