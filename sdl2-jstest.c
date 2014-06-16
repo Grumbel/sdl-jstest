@@ -1,5 +1,5 @@
 //  sdl-jstest - Joystick Test Program for SDL
-//  Copyright (C) 2007 Ingo Ruhnke <grumbel@gmx.de>
+//  Copyright (C) 2014 Ingo Ruhnke <grumbel@gmx.de>
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License
@@ -59,7 +59,7 @@ int str2int(const char* str, int* val)
 
 void print_joystick_info(int joy_idx, SDL_Joystick* joy)
 {
-  printf("Joystick Name:     '%s'\n", SDL_JoystickName(joy_idx));
+  printf("Joystick Name:     '%s'\n", SDL_JoystickName(joy));
   printf("Joystick Number:   %2d\n", joy_idx);
   printf("Number of Axes:    %2d\n", SDL_JoystickNumAxes(joy));
   printf("Number of Buttons: %2d\n", SDL_JoystickNumButtons(joy));
@@ -223,7 +223,7 @@ int main(int argc, char** argv)
             //clear();
             move(0,0);
 
-            printw("Joystick Name:   '%s'\n", SDL_JoystickName(joy_idx));
+            printw("Joystick Name:   '%s'\n", SDL_JoystickName(joy));
             printw("Joystick Number: %d\n", joy_idx);
             printw("\n");
 

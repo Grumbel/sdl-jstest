@@ -1,34 +1,34 @@
 <?xml version="1.0" standalone="no"?>
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
           "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
-<refentry id="sdl-jstest">
+<refentry id="sdl2-jstest">
   <refentryinfo>
     <date>2014-06-16</date>
   </refentryinfo>
 
   <refmeta>
     <refentrytitle>
-      <application>sdl-jstest</application>
+      <application>sdl2-jstest</application>
     </refentrytitle>
     <manvolnum>1</manvolnum>
     <refmiscinfo class="version">0.2.0</refmiscinfo>
     <refmiscinfo class="author">0.2.0</refmiscinfo>
     <refmiscinfo class="manual">User Commands</refmiscinfo>
-    <refmiscinfo class="source">sdl-jstest</refmiscinfo>
+    <refmiscinfo class="source">sdl2-jstest</refmiscinfo>
   </refmeta>
 
   <refnamediv>
     <refname>
-      <application>sdl-jstest</application>
+      <application>sdl2-jstest</application>
     </refname>
     <refpurpose>
-      A joystick test application for SDL
+      A joystick test application for SDL2
     </refpurpose>
   </refnamediv>
 
   <refsynopsisdiv>
     <cmdsynopsis>
-      <command>sdl-jstest</command>
+      <command>sdl2-jstest</command>
       <arg>--help</arg>
       <arg>--version</arg>
       <arg>--list</arg>
@@ -87,51 +87,9 @@
   </refsect1>
 
   <refsect1>
-    <title>SDL Configuration</title>
-    <para>
-      What SDL detects as axis, what is treated as a hat and what is
-      handled as normal axis can be configured with the environment
-      variable
-      <envar>SDL_LINUX_JOYSTICK:</envar>
-    </para>
-
-    <variablelist>
-      <varlistentry>
-        <term><envar>SDL_LINUX_JOYSTICK</envar></term>
-        <listitem>
-          Special joystick configuration string for linux. The format is
-          <option>"name numaxes numhats numballs"</option>
-          where name is the name string of the joystick (possibly in single
-          quotes), and the rest are the number of axes, hats and balls
-          respectively.
-        </listitem>
-      </varlistentry>
-    </variablelist>
-    <para>        
-      A simple example would be:
-    </para>
-    
-    <programlisting>$ export SDL_LINUX_JOYSTICK="'Xbox Gamepad (userspace driver)' 6 0 0"</programlisting>
-
-    <para>
-      Which makes all axis be handled as normal axis and none as hat,
-      as most games don't use hats.
-    </para>
-
-    <para>
-      A complete list of which environment variables SDL supports can be found at:
-    </para>
-
-    <itemizedlist>
-      <listitem><ulink url="ftp://ptah.lnf.kth.se/pub/misc/sdl-env-vars" /></listitem>
-    </itemizedlist>
-
-  </refsect1>
-
-  <refsect1>
     <title>See also</title>
     <para>
-      jstest(1), jstest-gtk(1), sdl2-jstest(1), xboxdrv(1)
+      jstest(1), jstest-gtk(1), sdl-jstest(1), xboxdrv(1)
     </para>
   </refsect1>
 </refentry>
