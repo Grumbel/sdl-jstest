@@ -59,7 +59,12 @@ int str2int(const char* str, int* val)
 
 void print_joystick_info(int joy_idx, SDL_Joystick* joy)
 {
+  SDL_JoystickGUID guid = SDL_JoystickGetGUID(joy);
+  char guid_str[1024];
+  SDL_JoystickGetGUIDString(guid, guid_str, sizeof(guid_str));
+
   printf("Joystick Name:     '%s'\n", SDL_JoystickName(joy));
+  printf("Joystick GUID:     %s\n", guid_str);
   printf("Joystick Number:   %2d\n", joy_idx);
   printf("Number of Axes:    %2d\n", SDL_JoystickNumAxes(joy));
   printf("Number of Buttons: %2d\n", SDL_JoystickNumButtons(joy));
