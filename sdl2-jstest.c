@@ -473,6 +473,45 @@ void event_joystick(int joy_idx)
   }
 }
 
+void test_rumble(int joy_idx)
+{
+  SDL_Joystick* joy = SDL_JoystickOpen(joy_idx);
+  if (!joy)
+  {
+    fprintf(stderr, "Unable to open joystick %d\n", joy_idx);
+  }
+  else
+  {
+    SDL_Haptic* haptic = SDL_HapticOpenFromJoystick(joy);
+    if (!haptic)
+    {
+      fprintf(stderr, "Unable to open haptic on joystick %d\n", joy_idx);
+      fprintf(stderr, "SDL_Error: %s\n", SDL_GetError());
+    }
+    else
+    {
+      if (!SDL_HapticRumbleSupported(haptic))
+      {
+        fprintf(stderr, "rumble not supported on joystick %d\n", joy_idx);
+      }
+      else
+      {
+        if (SDL_HapticRumbleInit(haptic) != 0)
+        {
+          fprintf(stderr, "failed to init rumble\n");
+        }
+        else
+        {
+          SDL_HapticRumblePlay(haptic, 1.0, 3000);
+          SDL_Delay(3000);
+        }
+      }
+      SDL_HapticClose(haptic);
+    }
+    SDL_JoystickClose(joy);
+  }
+}
+
 int main(int argc, char** argv)
 {
   if (argc == 1)
@@ -486,7 +525,7 @@ int main(int argc, char** argv)
   SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
 
   // FIXME: We don't need video, but without it SDL will fail to work in SDL_WaitEvent()
-  if(SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) < 0)
+  if(SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC) < 0)
   {
     fprintf(stderr, "Unable to init SDL: %s\n", SDL_GetError());
     exit(1);
@@ -548,6 +587,20 @@ int main(int argc, char** argv)
         exit(1);
       }
       event_joystick(joy_idx);
+    }
+    else if (argc == 3 && (strcmp(argv[1], "--rumble") == 0 ||
+                           strcmp(argv[1], "-r") == 0))
+    {
+      int idx;
+      if (!str2int(argv[2], &idx))
+      {
+        fprintf(stderr, "Error: JOYSTICKNUM argument must be a number, but was '%s'\n", argv[2]);
+        exit(1);
+      }
+      else
+      {
+        test_rumble(idx);
+      }
     }
     else
     {
