@@ -8,6 +8,13 @@ displaying the events they send or by displaying their current button,
 axis, hat or ball state. sdl-jstest is especially useful if you want
 to test your SDL_LINUX_JOYSTICK configuration.
 
+Building
+========
+
+sdl-jstest requires the following packages to build:
+libdsdl2-dev
+libncurses5-dev
+docbook2x
 
 Configuration
 =============
