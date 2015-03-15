@@ -1,20 +1,40 @@
 sdl-jstest
 ==========
 
-`sdl-jstest` is a simple program that lets you find out how many
-joysticks SDL detected on your system, how many axes, buttons, hats
-and balls they have each. It also lets you test the joysticks by
-displaying the events they send or by displaying their current button,
-axis, hat or ball state. sdl-jstest is especially useful if you want
-to test your `SDL_LINUX_JOYSTICK` configuration.
+`sdl-jstest` and `sdl2-jstest` are simple programs that lets you find
+out how many joysticks SDL or SDL2 detected on your system, how many
+axes, buttons, hats and balls they have each. They also lets you test
+the joysticks by displaying the events they send or by displaying
+their current button, axis, hat or ball state. sdl-jstest is
+especially useful if you want to test your `SDL_LINUX_JOYSTICK`
+configuration.
 
-Building
-========
+
+Requirements
+------------
 
 sdl-jstest requires the following packages to build:
-libdsdl2-dev
-libncurses5-dev
-docbook2x
+
+* libsdl1.2-dev
+* libsdl2-dev
+* libncurses5-dev
+
+For building the manpages:
+
+* docbook2x
+
+
+Compilation
+-----------
+
+To compile just type:
+
+    $ make
+
+To rebuild the man-pages:
+
+    $ make doc
+
 
 Configuration
 -------------
