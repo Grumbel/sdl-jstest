@@ -1,12 +1,12 @@
 sdl-jstest
 ==========
 
-sdl-jstest is a simple program that lets you find out how many
+`sdl-jstest` is a simple program that lets you find out how many
 joysticks SDL detected on your system, how many axes, buttons, hats
 and balls they have each. It also lets you test the joysticks by
 displaying the events they send or by displaying their current button,
 axis, hat or ball state. sdl-jstest is especially useful if you want
-to test your SDL_LINUX_JOYSTICK configuration.
+to test your `SDL_LINUX_JOYSTICK` configuration.
 
 Building
 ========
@@ -17,15 +17,15 @@ libncurses5-dev
 docbook2x
 
 Configuration
-=============
+-------------
 
 The SDL behaviour of what axis is treated as a hat and which as normal
 axis can be configured with the environment variable
-SDL_LINUX_JOYSTICK:
+`SDL_LINUX_JOYSTICK`:
 
  * ftp://ptah.lnf.kth.se/pub/misc/sdl-env-vars
 
-SDL_LINUX_JOYSTICK
+`SDL_LINUX_JOYSTICK`:
 	Special joystick configuration string for linux. The format is
 	"name numaxes numhats numballs"
 	where name is the name string of the joystick (possibly in single
@@ -34,10 +34,7 @@ SDL_LINUX_JOYSTICK
 
 A simple example would be:
 
- $ export SDL_LINUX_JOYSTICK="'Xbox Gamepad (userspace driver)' 6 0 0"
+    $ export SDL_LINUX_JOYSTICK="'Xbox Gamepad (userspace driver)' 6 0 0"
 
 Which makes all axis be handled as normal axis and none as hat, as
 most games don't use hats.
-
-
-# EOF #
