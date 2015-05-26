@@ -280,7 +280,7 @@ int main(int argc, char** argv)
             printw("Balls %2d: ", num_balls);
             for(int i = 0; i < num_balls; ++i)
             {
-              printw("  %2d: %6d %6d\n", i, balls[2*i+0], balls[2*i+0]);
+              printw("  %2d: %6d %6d\n", i, balls[2*i+0], balls[2*i+1]);
             }
             printw("\n");
             printw("\n");
