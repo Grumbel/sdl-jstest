@@ -50,10 +50,6 @@ before_install:
   # SDL dependencies
   - wget http://libsdl.org/release/SDL2-$SDL2_VERSION.tar.gz -O - | tar xz
   - (cd SDL2-$SDL2_VERSION && ./configure --prefix=/usr && make -j3 && sudo make install)
-  - wget http://www.libsdl.org/projects/SDL_image/release/SDL2_image-$SDL2IMAGE_VERSION.tar.gz -O - | tar xz
-  - (cd SDL2_image-$SDL2IMAGE_VERSION && ./configure --prefix=/usr && make -j3 && sudo make install)
-  - wget http://www.libsdl.org/projects/SDL_mixer/release/SDL2_mixer-$SDL2MIXER_VERSION.tar.gz -O - | tar xz
-  - (cd SDL2_mixer-$SDL2MIXER_VERSION && ./configure --prefix=/usr && make -j3 && sudo make install)
 
 script:
   # Clean from previous Travis build
