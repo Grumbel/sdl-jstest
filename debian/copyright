@@ -1,15 +1,15 @@
-This package was debianized by Ingo Ruhnke <grumbel@gmx.de> on
+This package was debianized by Ingo Ruhnke <grumbel@gmail.com> on
 Tue, 7 Mai 2010 18:43:42 +0200.
 
 It was downloaded from svn://svn.berlios.de/windstille/trunk/sdl-jstest
 
 Upstream Author(s):
 
-  Ingo Ruhnke <grumbel@gmx.de>
+  Ingo Ruhnke <grumbel@gmail.com>
 
 Copyright:
 
-  Copyright (C) 2009 Ingo Ruhnke <grumbel@gmx.de>
+  Copyright (C) 2009 Ingo Ruhnke <grumbel@gmail.com>
 
 License:
 
@@ -27,5 +27,5 @@ License:
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-The Debian packaging is copyright 2010, Ingo Ruhnke <grumbel@gmx.de> and
+The Debian packaging is copyright 2010, Ingo Ruhnke <grumbel@gmail.com> and
 is licensed under the GPL, see `/usr/share/common-licenses/GPL'.

@@ -1,5 +1,5 @@
 // sdl-jstest - Joystick Test Program for SDL
-// Copyright (C) 2007 Ingo Ruhnke <grumbel@gmx.de>
+// Copyright (C) 2007 Ingo Ruhnke <grumbel@gmail.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
