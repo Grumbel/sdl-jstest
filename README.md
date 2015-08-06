@@ -15,6 +15,7 @@ Requirements
 
 sdl-jstest requires the following packages to build:
 
+* cmake
 * libsdl1.2-dev
 * libsdl2-dev
 * libncurses5-dev
@@ -27,13 +28,22 @@ For building the manpages:
 Compilation
 -----------
 
-To compile just type:
+To compile type:
 
-    $ make
+    mkdir build
+    cd build
+    cmake ..
+    make
 
-To rebuild the man-pages:
+To install (optional):
 
-    $ make doc
+    make install
+
+The `DESTDIR` and `PREFIX` can be configured as follows:
+
+    make install DESTDIR=/tmp/pingus
+
+    cmake .. -DCMAKE_INSTALL_PREFIX:PATH=/usr
 
 
 Configuration
