@@ -41,7 +41,7 @@ env:
 
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install build-essential libsdl1.2-dev
+  - sudo apt-get install build-essential libsdl1.2-dev docbook2x
 
   # CMake
   - wget http://www.cmake.org/files/v3.2/cmake-$CMAKE_VERSION.tar.gz -O - | tar xz
