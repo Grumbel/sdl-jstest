@@ -25,6 +25,13 @@ find_package(SDL REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_search_module(SDL2 REQUIRED sdl2)
 
+find_program(DOCBOOK2XMAN docbook2x-man)
+if(DOCBOOK2XMAN)
+  message(STATUS "docbook2x-man: ${DOCBOOK2XMAN}")
+else()
+  message(STATUS "docbook2x-man: not found")
+endif()
+
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 
 if(WARNINGS)
@@ -46,17 +53,29 @@ add_executable(sdl-jstest sdl-jstest.c)
 target_link_libraries(sdl-jstest ${SDL_LIBRARY} ${CURSES_LIBRARIES})
 target_include_directories(sdl-jstest PUBLIC ${SDL_INCLUDE_DIR} ${CURSES_INCLUDE_DIR})
 
-# sdl-jstest.1: sdl-jstest.xml
-# 	docbook2x-man --to-stdout $< > $@
+if(DOCBOOK2XMAN)
+  add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sdl-jstest.1
+    COMMAND ${DOCBOOK2XMAN} ${CMAKE_CURRENT_SOURCE_DIR}/sdl-jstest.xml
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/sdl-jstest.xml
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-# sdl2-jstest.1: sdl2-jstest.xml
-# 	docbook2x-man --to-stdout $< > $@
+  add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.1
+    COMMAND ${DOCBOOK2XMAN} ${CMAKE_CURRENT_SOURCE_DIR}/sdl2-jstest.xml
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/sdl2-jstest.xml
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+else()
+  file(COPY sdl-jstest.1 sdl2-jstest.1
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+endif()
+
+add_custom_target(doc ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/sdl-jstest.1 ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.1)
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sdl-jstest.1 ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.1
+  DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 
 install(TARGETS sdl-jstest sdl2-jstest
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-install(FILES
-  sdl-jstest.1 sdl2-jstest.1
-  DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 
 # EOF #
