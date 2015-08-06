@@ -14,8 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-cmake_minimum_required(VERSION 3.0)
-project(sdl-jstest VERSION 0.1.0)
+cmake_minimum_required(VERSION 2.8)
 
 include(GNUInstallDirs)
 
