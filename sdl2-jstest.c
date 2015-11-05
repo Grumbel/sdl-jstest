@@ -91,11 +91,14 @@ void print_help(const char* prg)
          "/dev/input/jsX interface\n");
   printf("\n");
   printf("Options:\n");
-  printf("  --help             Print this help\n");
-  printf("  --version          Print version number and exit\n");
-  printf("  --list             Search for available joysticks and list their properties\n");
-  printf("  --test  JOYNUM     Display a graphical representation of the current joystick state\n");
-  printf("  --event JOYNUM     Display the events that are recieved from the joystick\n");
+  printf("  -h, --help             Print this help\n");
+  printf("  --version              Print version number and exit\n");
+  printf("  -l, --list             Search for available joysticks and list their properties\n");
+  printf("  -t, --test JOYNUM      Display a graphical representation of the current joystick state\n");
+  printf("  -g, --gamecontroller IDX\n"
+         "                         Test GameController\n");
+  printf("  -e, --event JOYNUM     Display the events that are recieved from the joystick\n");
+  printf("  -r, --rumble JOYNUM    Test rumble effects on gamepad JOYNUM\n");
   printf("\n");
   printf("Examples:\n");
   printf("  %s --list\n", prg);
@@ -539,7 +542,7 @@ int main(int argc, char** argv)
     {
       print_help(argv[0]);
     }
-    if (argc == 2 && (strcmp(argv[1], "--version") == 0))
+    else if (argc == 2 && (strcmp(argv[1], "--version") == 0))
     {
       printf("sdl-jstest 0.2.0\n");
       exit(EXIT_SUCCESS);
