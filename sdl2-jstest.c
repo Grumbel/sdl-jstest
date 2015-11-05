@@ -375,6 +375,42 @@ void test_gamecontroller_events(SDL_GameController* gamepad)
   }
 }
 
+void test_gamecontroller_state(SDL_GameController* gamepad)
+{
+  assert(gamepad);
+
+  printf("Entering gamecontroller test loop, press Ctrl-c to exit\n");
+  int quit = 0;
+  SDL_Event event;
+
+  while(!quit && SDL_WaitEvent(&event))
+  {
+    switch(event.type)
+    {
+      case SDL_QUIT:
+        quit = 1;
+        printf("Recieved interrupt, exiting\n");
+        break;
+    }
+
+    for(int btn = 0; btn < SDL_CONTROLLER_BUTTON_MAX; ++btn)
+    {
+      printf("%s:%d ",
+             SDL_GameControllerGetStringForButton(btn),
+             SDL_GameControllerGetButton(gamepad, btn));
+    }
+
+    for(int axis = 0; axis < SDL_CONTROLLER_AXIS_MAX; ++axis)
+    {
+      printf("%s:%6d ",
+             SDL_GameControllerGetStringForAxis(axis),
+             SDL_GameControllerGetAxis(gamepad, axis));
+    }
+
+    printf("\n");
+  }
+}
+
 void test_gamecontroller(int gamecontroller_idx)
 {
   SDL_GameController* gamepad = SDL_GameControllerOpen(gamecontroller_idx);
@@ -384,7 +420,8 @@ void test_gamecontroller(int gamecontroller_idx)
   }
   else
   {
-    test_gamecontroller_events(gamepad);
+    //test_gamecontroller_events(gamepad);
+    test_gamecontroller_state(gamepad);
 
     SDL_GameControllerClose(gamepad);
   }
