@@ -44,6 +44,7 @@ if(WERROR)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
 endif()
 
+link_directories(${SDL2_LIBRARY_DIRS})
 add_executable(sdl2-jstest sdl2-jstest.c)
 target_link_libraries(sdl2-jstest ${SDL2_LIBRARIES} ${CURSES_LIBRARIES})
 target_include_directories(sdl2-jstest PUBLIC ${SDL2_INCLUDE_DIRS} ${CURSES_INCLUDE_DIR})
