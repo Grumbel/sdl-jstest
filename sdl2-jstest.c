@@ -148,7 +148,8 @@ void test_joystick(int joy_idx)
     initscr();
 
     //cbreak();
-    //noecho();
+    noecho();
+    nodelay(stdscr, TRUE);
     //nonl();
     curs_set(0);
 
@@ -273,6 +274,11 @@ void test_joystick(int joy_idx)
         printw("Press Ctrl-c to exit\n");
 
         refresh();
+      }
+
+      if ( getch() == 3 ) // Ctrl-c
+      {
+        quit = 1;
       }
     } // while
 

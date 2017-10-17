@@ -161,7 +161,8 @@ int main(int argc, char** argv)
         initscr();
 
         //cbreak();
-        //noecho();
+        noecho();
+        nodelay(stdscr, TRUE);
         //nonl();
         curs_set(0);
 
@@ -287,6 +288,11 @@ int main(int argc, char** argv)
             printw("Press Ctrl-c to exit\n");
 
             refresh();
+          }
+
+          if ( getch() == 3 ) // Ctrl-c
+          {
+            quit = 1;
           }
         } // while
 
