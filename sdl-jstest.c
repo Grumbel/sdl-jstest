@@ -181,9 +181,9 @@ int main(int argc, char** argv)
         {
           SDL_Delay(10);
 
-          bool something_new = false;
+          bool something_new = FALSE;
           while (SDL_PollEvent(&event)) {
-            something_new = true;
+            something_new = TRUE;
             switch(event.type)
             {
               case SDL_JOYAXISMOTION:
