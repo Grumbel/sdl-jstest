@@ -46,6 +46,24 @@ The `DESTDIR` and `PREFIX` can be configured as follows:
     cmake .. -DCMAKE_INSTALL_PREFIX:PATH=/usr
 
 
+Cross-compilation to Win32
+--------------------------
+
+MXE (http://mxe.cc) is needed. Follow its installation instructions,
+but you can build it with just the needed packages for sdl-jstest:
+
+    make gcc cmake sdl sdl2 ncurses pdcurses
+
+This still takes quite a while.
+
+After MXE installation finishes, for sdl-jstest compilation type:
+
+    mkdir build
+    cd build
+    i686-w64-mingw32.static-cmake ..
+    make
+
+
 Configuration
 -------------
 
