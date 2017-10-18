@@ -161,7 +161,8 @@ int main(int argc, char** argv)
         initscr();
 
         //cbreak();
-        //noecho();
+        noecho();
+        nodelay(stdscr, TRUE);
         //nonl();
         curs_set(0);
 
@@ -181,9 +182,9 @@ int main(int argc, char** argv)
         {
           SDL_Delay(10);
 
-          bool something_new = false;
+          bool something_new = FALSE;
           while (SDL_PollEvent(&event)) {
-            something_new = true;
+            something_new = TRUE;
             switch(event.type)
             {
               case SDL_JOYAXISMOTION:
@@ -287,6 +288,11 @@ int main(int argc, char** argv)
             printw("Press Ctrl-c to exit\n");
 
             refresh();
+          }
+
+          if ( getch() == 3 ) // Ctrl-c
+          {
+            quit = 1;
           }
         } // while
 
