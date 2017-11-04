@@ -19,6 +19,7 @@ project(sdl-jstest VERSION 0.1.0)
 
 include(GNUInstallDirs)
 
+set(CURSES_NEED_NCURSES TRUE)
 find_package(Curses REQUIRED)
 find_package(SDL REQUIRED)
 
@@ -47,12 +48,12 @@ endif()
 link_directories(${SDL2_LIBRARY_DIRS})
 add_executable(sdl2-jstest sdl2-jstest.c)
 target_link_libraries(sdl2-jstest ${SDL2_LIBRARIES} ${CURSES_LIBRARIES})
-target_include_directories(sdl2-jstest PUBLIC ${SDL2_INCLUDE_DIRS} ${CURSES_INCLUDE_DIR})
+target_include_directories(sdl2-jstest PUBLIC ${SDL2_INCLUDE_DIRS} ${CURSES_INCLUDE_DIRS})
 target_compile_definitions(sdl2-jstest PUBLIC ${SDL2_CFLAGS_OTHER})
 
 add_executable(sdl-jstest sdl-jstest.c)
 target_link_libraries(sdl-jstest ${SDL_LIBRARY} ${CURSES_LIBRARIES})
-target_include_directories(sdl-jstest PUBLIC ${SDL_INCLUDE_DIR} ${CURSES_INCLUDE_DIR})
+target_include_directories(sdl-jstest PUBLIC ${SDL_INCLUDE_DIR} ${CURSES_INCLUDE_DIRS})
 
 if(DOCBOOK2XMAN)
   add_custom_command(
