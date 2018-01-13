@@ -1,66 +1,55 @@
-'\" -*- coding: us-ascii -*-
-.if \n(.g .ds T< \\FC
-.if \n(.g .ds T> \\F[\n[.fam]]
-.de URL
-\\$2 \(la\\$1\(ra\\$3
-..
-.if \n(.g .mso www.tmac
-.TH "sdl-jstest " 1 2014-06-16 0.2.0 "User Commands"
-.SH NAME
-sdl-jstest
-\- A joystick test application for SDL 
-.SH SYNOPSIS
-'nh
-.fi
-.ad l
-\fBsdl-jstest\fR \kx
-.if (\nx>(\n(.l/2)) .nr x (\n(.l/5)
-'in \n(.iu+\nxu
-[--help] [--version] [--list] [--test \fIJOYNUM\fR] [--event \fIJOYNUM\fR]
-'in \n(.iu-\nxu
-.ad b
-'hy
-.SH DESCRIPTION
-.TP 
-\*(T<\fB\-h\fR\*(T>, \*(T<\fB\-\-help\fR\*(T>
+.Dd June 16, 2014
+.Dt SDL-JSTEST 1
+.Os
+.Sh NAME
+.Nm sdl-jstest
+.Nd joystick test application for SDL
+.Sh SYNOPSIS
+.Nm sdl-jstest
+.Op Fl Fl help
+.Op Fl Fl version
+.Op Fl Fl list
+.Op Fl Fl test Ar JOYNUM
+.Op Fl Fl event Ar JOYNUM
+.Sh DESCRIPTION
+.Bl -tag -width Ds
+.It Fl h , Fl Fl help
 Display help text and exit.
-.TP 
-\*(T<\fB\-\-version\fR\*(T>
+.It Fl Fl version
 Display the version number and exit.
-.TP 
-\*(T<\fB\-\-list\fR\*(T>
+.It Fl Fl list
 Search for available joysticks and list their properties.
-.TP 
-\*(T<\fB\-\-test\fR\*(T> \fIJOYNUM\fR
+.It Fl Fl test Ar JOYNUM
 Display a graphical representation of the current joystick state.
-.TP 
-\*(T<\fB\-\-event\fR\*(T> \fIJOYNUM\fR
+.It Fl Fl event Ar JOYNUM
 Display the events that are recieved from the joystick.
-.SH "SDL CONFIGURATION"
+.El
+.Sh ENVIRONMENT
 What SDL detects as axis, what is treated as a hat and what is
 handled as normal axis can be configured with the environment
 variable
-\fBSDL_LINUX_JOYSTICK:\fR
-.TP 
-\fBSDL_LINUX_JOYSTICK\fR
-Special joystick configuration string for linux. The format is
-\*(T<\fB"name numaxes numhats numballs"\fR\*(T>
-where name is the name string of the joystick (possibly in single
-quotes), and the rest are the number of axes, hats and balls
-respectively.
-.PP
-A simple example would be:
-.PP
-.nf
-\*(T<$ export SDL_LINUX_JOYSTICK="'Xbox Gamepad (userspace driver)' 6 0 0"\*(T>
-.fi
-.PP
-Which makes all axis be handled as normal axis and none as hat,
-as most games don't use hats.
-.PP
+.Ev SDL_LINUX_JOYSTICK :
+.Bl -tag -width Ds
+.It Ev SDL_LINUX_JOYSTICK
+Special joystick configuration string for Unix.
+The format is
+.Qq Ar name numaxes numhats numballs
+where
+.Ar name
+is the name string of the joystick (possibly in single quotes),
+and the rest are the number of axes, hats and balls respectively.
+.El
+.Pp
 A complete list of which environment variables SDL supports can be found at:
-.TP 0.2i
-\(bu
-.URL ftp://ptah.lnf.kth.se/pub/misc/sdl-env-vars ""
-.SH "SEE ALSO"
-jstest(1), jstest-gtk(1), sdl2-jstest(1), xboxdrv(1)
+.Lk http://sdl.beuc.net/sdl.wiki/SDL_envvars
+.Sh EXAMPLES
+A simple example would be:
+.D1 $ export SDL_LINUX_JOYSTICK="\(aqXbox Gamepad (userspace driver)\(aq 6 0 0"
+.Pp
+Which makes all axes be handled as normal axis and none as hat,
+as most games don't use hats.
+.Sh SEE ALSO
+.Xr jstest 1 ,
+.Xr jstest-gtk 1 ,
+.Xr sdl2-jstest 1 ,
+.Xr xboxdrv 1
