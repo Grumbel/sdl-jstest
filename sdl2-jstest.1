@@ -1,40 +1,31 @@
-'\" -*- coding: us-ascii -*-
-.if \n(.g .ds T< \\FC
-.if \n(.g .ds T> \\F[\n[.fam]]
-.de URL
-\\$2 \(la\\$1\(ra\\$3
-..
-.if \n(.g .mso www.tmac
-.TH "sdl2-jstest " 1 2014-06-16 0.2.0 "User Commands"
-.SH NAME
-sdl2-jstest
-\- A joystick test application for SDL2 
-.SH SYNOPSIS
-'nh
-.fi
-.ad l
-\fBsdl2-jstest\fR \kx
-.if (\nx>(\n(.l/2)) .nr x (\n(.l/5)
-'in \n(.iu+\nxu
-[--help] [--version] [--list] [--test \fIJOYNUM\fR] [--event \fIJOYNUM\fR]
-'in \n(.iu-\nxu
-.ad b
-'hy
-.SH DESCRIPTION
-.TP 
-\*(T<\fB\-h\fR\*(T>, \*(T<\fB\-\-help\fR\*(T>
+.Dd June 16, 2014
+.Dt SDL2-JSTEST 1
+.Os
+.Sh NAME
+.Nm sdl2-jstest
+.Nd joystick test application for SDL2
+.Sh SYNOPSIS
+.Nm sdl2-jstest
+.Op Fl Fl help
+.Op Fl Fl version
+.Op Fl Fl list
+.Op Fl Fl test Ar JOYNUM
+.Op Fl Fl event Ar JOYNUM
+.Sh DESCRIPTION
+.Bl -tag -width Ds
+.It Fl h , Fl Fl help
 Display help text and exit.
-.TP 
-\*(T<\fB\-\-version\fR\*(T>
+.It Fl Fl version
 Display the version number and exit.
-.TP 
-\*(T<\fB\-\-list\fR\*(T>
+.It Fl Fl list
 Search for available joysticks and list their properties.
-.TP 
-\*(T<\fB\-\-test\fR\*(T> \fIJOYNUM\fR
+.It Fl Fl test Ar JOYNUM
 Display a graphical representation of the current joystick state.
-.TP 
-\*(T<\fB\-\-event\fR\*(T> \fIJOYNUM\fR
+.It Fl Fl event Ar JOYNUM
 Display the events that are recieved from the joystick.
-.SH "SEE ALSO"
-jstest(1), jstest-gtk(1), sdl-jstest(1), xboxdrv(1)
+.El
+.Sh SEE ALSO
+.Xr jstest 1 ,
+.Xr jstest-gtk 1 ,
+.Xr sdl-jstest 1 ,
+.Xr xboxdrv 1
