@@ -10,19 +10,24 @@
 .Op Fl Fl version
 .Op Fl Fl list
 .Op Fl Fl test Ar JOYNUM
+.Op Fl Fl gamecontroller Ar IDX
 .Op Fl Fl event Ar JOYNUM
+.Op Fl Fl rumble Ar JOYNUM
 .Sh DESCRIPTION
 .Bl -tag -width Ds
 .It Fl h , Fl Fl help
 Display help text and exit.
 .It Fl Fl version
 Display the version number and exit.
-.It Fl Fl list
+.It Fl l , Fl Fl list
 Search for available joysticks and list their properties.
-.It Fl Fl test Ar JOYNUM
+.It Fl t Ar JOYNUM , Fl Fl test Ar JOYNUM
 Display a graphical representation of the current joystick state.
-.It Fl Fl event Ar JOYNUM
-Display the events that are recieved from the joystick.
+.It Fl g Ar IDX , Fl Fl gamecontroller Ar IDX
+Test the given GameController interface.
+.It Fl e Ar JOYNUM , Fl Fl event Ar JOYNUM
+Display the events that are received from the joystick.
+.It Fl r Ar JOYNUM , Fl Fl rumble Ar JOYNUM
 .El
 .Sh SEE ALSO
 .Xr jstest 1 ,
