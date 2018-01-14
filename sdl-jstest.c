@@ -80,7 +80,7 @@ void print_help(const char* prg)
   printf("  --version          Print version number and exit\n");
   printf("  --list             Search for available joysticks and list their properties\n");
   printf("  --test  JOYNUM     Display a graphical representation of the current joystick state\n");
-  printf("  --event JOYNUM     Display the events that are recieved from the joystick\n");
+  printf("  --event JOYNUM     Display the events that are received from the joystick\n");
   printf("\n");
   printf("Examples:\n");
   printf("  %s --list\n", prg);

@@ -97,7 +97,7 @@ void print_help(const char* prg)
   printf("  -t, --test JOYNUM      Display a graphical representation of the current joystick state\n");
   printf("  -g, --gamecontroller IDX\n"
          "                         Test GameController\n");
-  printf("  -e, --event JOYNUM     Display the events that are recieved from the joystick\n");
+  printf("  -e, --event JOYNUM     Display the events that are received from the joystick\n");
   printf("  -r, --rumble JOYNUM    Test rumble effects on gamepad JOYNUM\n");
   printf("\n");
   printf("Examples:\n");
