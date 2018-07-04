@@ -5,7 +5,9 @@
     "sdk": "org.freedesktop.Sdk",
     "finish-args": [
         "--device=all",
-        "--share=ipc"
+        "--share=ipc",
+        "--socket=x11",
+        "--socket=wayland"
     ],
     "modules": [
         "ncurses-6.1.json",

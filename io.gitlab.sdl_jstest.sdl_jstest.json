@@ -5,7 +5,9 @@
     "sdk": "org.freedesktop.Sdk",
     "finish-args": [
         "--device=all",
-        "--share=ipc"
+        "--share=ipc",
+        "--socket=x11",
+        "--socket=wayland"
     ],
     "modules": [
         "shared-modules/SDL/SDL-1.2.15.json",
