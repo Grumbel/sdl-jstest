@@ -29,6 +29,7 @@ before_script:
     desktop-file-utils
     appstream-util
     libc++-dev
+    libncurses5-dev
     libsdl1.2-dev
     libsdl2-dev
     software-properties-common
