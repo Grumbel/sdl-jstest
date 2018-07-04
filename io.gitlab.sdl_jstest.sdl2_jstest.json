@@ -1,0 +1,29 @@
+{
+    "app-id": "io.gitlab.sdl_jstest.sdl2_jstest",
+    "runtime": "org.freedesktop.Platform",
+    "runtime-version": "1.6",
+    "sdk": "org.freedesktop.Sdk",
+    "finish-args": [
+        "--device=all",
+        "--share=ipc"
+    ],
+    "modules": [
+        {
+            "name": "sdl-jstest",
+            "buildsystem": "cmake-ninja",
+            "config-opts": [
+                "-DCMAKE_BUILD_TYPE=Release",
+                "-DCMAKE_INSTALL_PREFIX:PATH=/app",
+                "-DBUILD_SDL_JSTEST=OFF",
+                "-DBUILD_SDL2_JSTEST=ON"
+            ],
+            "sources": [
+                {
+                    "type": "git",
+                    "url": "https://gitlab.com/grumbel/sdl-jstest.git",
+                    "branch": "master"
+                }
+            ]
+        }
+    ]
+}

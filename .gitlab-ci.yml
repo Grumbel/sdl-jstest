@@ -66,19 +66,34 @@ build:clang:debug:
     CXX: clang++-6.0
     BUILD_TYPE: Debug
 
-# build:flatpak:
-#   stage: build
-#   script:
-#     - add-apt-repository -y ppa:alexlarsson/flatpak
-#     - apt-get -qq update
-#     - apt-get -qq -y install flatpak flatpak-builder
-#     - flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-#     - flatpak install -y flathub org.freedesktop.Platform org.freedesktop.Sdk
-#     - flatpak-builder --repo=build-flatpak-repo/ build-flatpak/ org.sdl_jstest.sdl_jstest.json
-#     - flatpak build-bundle build-flatpak-repo/ sdl_jstest.flatpak org.sdl_jstest.sdl_jstest
-#   artifacts:
-#     paths:
-#       - sdl_jstest.flatpak
-#       - build-flatpak-repo
+build:sdl_jstest:flatpak:
+  stage: build
+  script:
+    - add-apt-repository -y ppa:alexlarsson/flatpak
+    - apt-get -qq update
+    - apt-get -qq -y install flatpak flatpak-builder
+    - flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+    - flatpak install -y flathub org.freedesktop.Platform org.freedesktop.Sdk
+    - flatpak-builder --repo=build-flatpak-repo/ build-flatpak/ io.gitlab.sdl_jstest.sdl_jstest.json
+    - flatpak build-bundle build-flatpak-repo/ sdl_jstest.flatpak io.gitlab.sdl_jstest.sdl_jstest
+  artifacts:
+    paths:
+      - sdl_jstest.flatpak
+      - build-flatpak-repo
+
+build:sdl2_jstest:flatpak:
+  stage: build
+  script:
+    - add-apt-repository -y ppa:alexlarsson/flatpak
+    - apt-get -qq update
+    - apt-get -qq -y install flatpak flatpak-builder
+    - flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+    - flatpak install -y flathub org.freedesktop.Platform org.freedesktop.Sdk
+    - flatpak-builder --repo=build-flatpak-repo/ build-flatpak/ io.gitlab.sdl_jstest.sdl2_jstest.json
+    - flatpak build-bundle build-flatpak-repo/ sdl2_jstest.flatpak io.gitlab.sdl_jstest.sdl2_jstest
+  artifacts:
+    paths:
+      - sdl2_jstest.flatpak
+      - build-flatpak-repo
 
 # EOF #
