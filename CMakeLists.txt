@@ -19,16 +19,17 @@ project(sdl-jstest VERSION 0.2.1)
 
 add_definitions(-DSDL_JSTEST_VERSION="${PROJECT_VERSION}")
 
+option(WARNINGS "Switch on extra warnings" OFF)
+option(WERROR "Turn warnings into errors" OFF)
+option(BUILD_SDL_JSTEST "Build sdl-jstest" ON)
+option(BUILD_SDL2_JSTEST "Build sdl2-jstest" ON)
+
 include(GNUInstallDirs)
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 
 set(CURSES_NEED_NCURSES TRUE)
 find_package(Curses REQUIRED)
-find_package(SDL REQUIRED)
-
-find_package(PkgConfig REQUIRED)
-pkg_search_module(SDL2 REQUIRED sdl2)
-
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 
 if(WARNINGS)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -Wextra -Wnon-virtual-dtor -Weffc++")
@@ -40,28 +41,44 @@ if(WERROR)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
 endif()
 
-link_directories(${SDL2_LIBRARY_DIRS})
-add_executable(sdl2-jstest sdl2-jstest.c)
-target_link_libraries(sdl2-jstest ${SDL2_LIBRARIES} ${CURSES_LIBRARIES})
-target_include_directories(sdl2-jstest PUBLIC ${SDL2_INCLUDE_DIRS} ${CURSES_INCLUDE_DIRS})
-target_compile_definitions(sdl2-jstest PUBLIC ${SDL2_CFLAGS_OTHER})
+if(BUILD_SDL_JSTEST)
+  find_package(SDL REQUIRED)
 
-add_executable(sdl-jstest sdl-jstest.c)
-target_link_libraries(sdl-jstest ${SDL_LIBRARY} ${CURSES_LIBRARIES})
-target_include_directories(sdl-jstest PUBLIC ${SDL_INCLUDE_DIR} ${CURSES_INCLUDE_DIRS})
+  add_executable(sdl-jstest sdl-jstest.c)
+  target_link_libraries(sdl-jstest ${SDL_LIBRARY} ${CURSES_LIBRARIES})
+  target_include_directories(sdl-jstest PUBLIC ${SDL_INCLUDE_DIR} ${CURSES_INCLUDE_DIRS})
 
-file(COPY sdl-jstest.1 sdl2-jstest.1
-  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  file(COPY sdl-jstest.1
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-file(COPY SDL_GameControllerDB/gamecontrollerdb.txt
-  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sdl-jstest.1
+    DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 
-add_custom_target(doc ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/sdl-jstest.1 ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.1)
+  install(TARGETS sdl-jstest
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sdl-jstest.1 ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.1
-  DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+if(BUILD_SDL2_JSTEST)
+  find_package(PkgConfig REQUIRED)
+  pkg_search_module(SDL2 REQUIRED sdl2)
 
-install(TARGETS sdl-jstest sdl2-jstest
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+  link_directories(${SDL2_LIBRARY_DIRS})
+  add_executable(sdl2-jstest sdl2-jstest.c)
+  target_link_libraries(sdl2-jstest ${SDL2_LIBRARIES} ${CURSES_LIBRARIES})
+  target_include_directories(sdl2-jstest PUBLIC ${SDL2_INCLUDE_DIRS} ${CURSES_INCLUDE_DIRS})
+  target_compile_definitions(sdl2-jstest PUBLIC ${SDL2_CFLAGS_OTHER})
+
+  file(COPY sdl2-jstest.1
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+  file(COPY SDL_GameControllerDB/gamecontrollerdb.txt
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.1
+    DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+
+  install(TARGETS sdl2-jstest
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
 
 # EOF #
