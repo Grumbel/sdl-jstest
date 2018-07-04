@@ -86,7 +86,7 @@ void print_joystick_info(int joy_idx, SDL_Joystick* joy, SDL_GameController* gam
 void print_help(const char* prg)
 {
   printf("Usage: %s [OPTION]\n", prg);
-  printf("List available joysticks or test a  joystick.\n");
+  printf("List available joysticks or test a joystick.\n");
   printf("This programm uses SDL for doing its test instead of using the raw\n"
          "/dev/input/jsX interface\n");
   printf("\n");
