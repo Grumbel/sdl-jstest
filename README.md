@@ -20,10 +20,6 @@ sdl-jstest requires the following packages to build:
 * libsdl2-dev
 * libncurses5-dev
 
-For building the manpages:
-
-* docbook2x
-
 
 Compilation
 -----------
