@@ -15,7 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 cmake_minimum_required(VERSION 3.0)
-project(sdl-jstest VERSION 0.1.0)
+project(sdl-jstest VERSION 0.2.1)
+
+add_definitions(-DSDL_JSTEST_VERSION="${PROJECT_VERSION}")
 
 include(GNUInstallDirs)
 

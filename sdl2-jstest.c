@@ -593,7 +593,7 @@ int main(int argc, char** argv)
     }
     else if (argc == 2 && (strcmp(argv[1], "--version") == 0))
     {
-      printf("sdl-jstest 0.2.0\n");
+      printf("sdl2-jstest " SDL_JSTEST_VERSION "\n");
       exit(EXIT_SUCCESS);
     }
     else if (argc == 2 && (strcmp(argv[1], "--list") == 0 ||
