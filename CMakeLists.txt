@@ -51,6 +51,9 @@ target_include_directories(sdl-jstest PUBLIC ${SDL_INCLUDE_DIR} ${CURSES_INCLUDE
 file(COPY sdl-jstest.1 sdl2-jstest.1
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
+file(COPY SDL_GameControllerDB/gamecontrollerdb.txt
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 add_custom_target(doc ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/sdl-jstest.1 ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.1)
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sdl-jstest.1 ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.1

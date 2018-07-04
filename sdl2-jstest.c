@@ -578,6 +578,14 @@ int main(int argc, char** argv)
   {
     atexit(SDL_Quit);
 
+    {
+      int ret = SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
+      if (ret < 0)
+      {
+        fprintf(stderr, "error: failed to read gamecontrollerdb.txt: %s\n", SDL_GetError());
+      }
+    }
+
     if (argc == 2 && (strcmp(argv[1], "--help") == 0 ||
                       strcmp(argv[1], "-h") == 0))
     {
