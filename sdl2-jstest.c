@@ -68,10 +68,10 @@ void print_joystick_info(int joy_idx, SDL_Joystick* joy, SDL_GameController* gam
   printf("Number of Buttons: %2d\n", SDL_JoystickNumButtons(joy));
   printf("Number of Hats:    %2d\n", SDL_JoystickNumHats(joy));
   printf("Number of Balls:   %2d\n", SDL_JoystickNumBalls(joy));
-  printf("GameController:\n");
+  printf("GameControllerConfig:\n");
   if (!gamepad)
   {
-    printf("  not a gamepad\n");
+    printf("  missing (see 'gamecontrollerdb.txt' or SDL_GAMECONTROLLERCONFIG)\n");
   }
   else
   {
