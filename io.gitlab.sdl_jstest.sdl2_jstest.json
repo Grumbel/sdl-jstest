@@ -8,7 +8,7 @@
         "--share=ipc"
     ],
     "modules": [
-        "ncurses-6.0.json",
+        "ncurses-6.1.json",
         {
             "name": "sdl-jstest",
             "buildsystem": "cmake-ninja",

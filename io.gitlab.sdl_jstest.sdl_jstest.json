@@ -9,7 +9,7 @@
     ],
     "modules": [
         "shared-modules/SDL/SDL-1.2.15.json",
-        "ncurses-6.0.json",
+        "ncurses-6.1.json",
         {
             "name": "sdl-jstest",
             "buildsystem": "cmake-ninja",
