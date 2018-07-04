@@ -8,7 +8,9 @@
         "install.libs"
     ],
     "cleanup": [
-        "/bin/*",
+        "/bin",
+        "/include",
+        "/share/man",
         "/lib/*.a",
         "/lib/*.la"
     ],
