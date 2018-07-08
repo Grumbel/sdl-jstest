@@ -23,6 +23,6 @@
     <screenshot type="default">https://sdl-jstest.gitlab.io/screenshot-0.2.1-1.png</screenshot>
   </screenshots>
   ​<releases>
-  ​  <release version="2.2" />
+  ​  <release version="@GIT_REPO_VERSION@" date="@GIT_REPO_DATE@" />
   </releases>
 </component>

@@ -15,14 +15,25 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 cmake_minimum_required(VERSION 3.0)
-project(sdl-jstest VERSION 0.2.1)
-
-add_definitions(-DSDL_JSTEST_VERSION="${PROJECT_VERSION}")
+project(sdl-jstest)
 
 option(WARNINGS "Switch on extra warnings" OFF)
 option(WERROR "Turn warnings into errors" OFF)
+option(BUILD_TESTS "Build test cases" OFF)
 option(BUILD_SDL_JSTEST "Build sdl-jstest" ON)
 option(BUILD_SDL2_JSTEST "Build sdl2-jstest" ON)
+
+find_package(Git REQUIRED)
+
+execute_process(COMMAND ${GIT_EXECUTABLE} describe --tags --always HEAD
+  OUTPUT_VARIABLE GIT_REPO_VERSION
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+execute_process(COMMAND ${GIT_EXECUTABLE} log -1 --format=%aI ${GIT_REPO_VERSION}
+  OUTPUT_VARIABLE GIT_REPO_DATE
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+add_definitions(-DSDL_JSTEST_VERSION="${GIT_REPO_VERSION}")
 
 include(GNUInstallDirs)
 
@@ -41,12 +52,26 @@ if(WERROR)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
 endif()
 
+if (BUILD_TESTS)
+  enable_testing()
+endif(BUILD_TESTS)
+
 if(BUILD_SDL_JSTEST)
   find_package(SDL REQUIRED)
 
   add_executable(sdl-jstest sdl-jstest.c)
   target_link_libraries(sdl-jstest ${SDL_LIBRARY} ${CURSES_LIBRARIES})
   target_include_directories(sdl-jstest PUBLIC ${SDL_INCLUDE_DIR} ${CURSES_INCLUDE_DIRS})
+
+  configure_file(sdl-jstest.appdata.xml.in ${CMAKE_CURRENT_BINARY_DIR}/sdl-jstest.appdata.xml)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sdl-jstest.appdata.xml
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo)
+
+  if (BUILD_TESTS)
+    add_test(NAME sdl-jstest.appdata.xml
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      COMMAND appstream-util validate-relax ${CMAKE_CURRENT_BINARY_DIR}/sdl-jstest.appdata.xml)
+  endif(BUILD_TESTS)
 
   file(COPY sdl-jstest.1
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
@@ -67,6 +92,10 @@ if(BUILD_SDL2_JSTEST)
   target_link_libraries(sdl2-jstest ${SDL2_LIBRARIES} ${CURSES_LIBRARIES})
   target_include_directories(sdl2-jstest PUBLIC ${SDL2_INCLUDE_DIRS} ${CURSES_INCLUDE_DIRS})
   target_compile_definitions(sdl2-jstest PUBLIC ${SDL2_CFLAGS_OTHER})
+
+  configure_file(sdl2-jstest.appdata.xml.in ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.appdata.xml)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.appdata.xml
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo)
 
   file(COPY sdl2-jstest.1
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
