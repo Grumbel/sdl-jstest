@@ -97,6 +97,12 @@ if(BUILD_SDL2_JSTEST)
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.appdata.xml
     DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo)
 
+  if (BUILD_TESTS)
+    add_test(NAME sdl2-jstest.appdata.xml
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      COMMAND appstream-util validate-relax ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.appdata.xml)
+  endif(BUILD_TESTS)
+
   file(COPY sdl2-jstest.1
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
