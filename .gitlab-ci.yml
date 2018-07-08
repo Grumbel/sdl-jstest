@@ -26,6 +26,7 @@ before_script:
     g++-8
     cmake
     build-essential
+    git
     desktop-file-utils
     appstream-util
     libc++-dev
