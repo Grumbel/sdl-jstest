@@ -3,6 +3,7 @@
     "runtime": "org.freedesktop.Platform",
     "runtime-version": "1.6",
     "sdk": "org.freedesktop.Sdk",
+    "rename-appdata-file": "sdl2-jstest.appdata.xml",
     "finish-args": [
         "--device=all",
         "--share=ipc",
@@ -12,7 +13,7 @@
     "modules": [
         "ncurses-6.1.json",
         {
-            "name": "sdl-jstest",
+            "name": "sdl2-jstest",
             "buildsystem": "cmake-ninja",
             "config-opts": [
                 "-DCMAKE_BUILD_TYPE=Release",
@@ -23,7 +24,7 @@
             "sources": [
                 {
                     "type": "git",
-                    "url": "https://gitlab.com/grumbel/sdl-jstest.git",
+                    "url": "https://gitlab.com/sdl-jstest/sdl-jstest.git",
                     "branch": "master"
                 }
             ]
