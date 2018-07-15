@@ -2,10 +2,10 @@
 
 <component type="console-application">
   <id>io.gitlab.sdl_jstest.sdl_jstest</id>
-  <name>sdl-jstest</name>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0+</project_license>
   <content_rating type="oars-1.1" />
+  <name>sdl-jstest</name>
   <summary>Console based joystick test program for SDL</summary>
   <description>
     <p>
@@ -18,7 +18,10 @@
       `SDL_LINUX_JOYSTICK` configuration.
     </p>
   </description>
+  <developer_name>Ingo Ruhnke</developer_name>
+  <update_contact>grumbel@gmail.com</update_contact>
   <url type="homepage">https://sdl-jstest.gitlab.io</url>
+  <url type="bugtracker">https://gitlab.com/sdl-jstest/sdl-jstest/issues</url>
   <screenshots>
     <screenshot type="default">https://sdl-jstest.gitlab.io/screenshot-0.2.1-1.png</screenshot>
   </screenshots>
