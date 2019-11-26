@@ -23,17 +23,12 @@ option(BUILD_TESTS "Build test cases" OFF)
 option(BUILD_SDL_JSTEST "Build sdl-jstest" ON)
 option(BUILD_SDL2_JSTEST "Build sdl2-jstest" ON)
 
-find_package(Git REQUIRED)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/mk/cmake)
 
-execute_process(COMMAND ${GIT_EXECUTABLE} describe --tags --always HEAD
-  OUTPUT_VARIABLE GIT_REPO_VERSION
-  OUTPUT_STRIP_TRAILING_WHITESPACE)
+include(GetProjectVersion)
+include(GNUInstallDirs)
 
-execute_process(COMMAND ${GIT_EXECUTABLE} log -n 1 --pretty=%cd --date=format:%Y-%m-%d ${GIT_REPO_VERSION}
-  OUTPUT_VARIABLE GIT_REPO_DATE
-  OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-add_definitions(-DSDL_JSTEST_VERSION="${GIT_REPO_VERSION}")
+add_definitions(-DSDL_JSTEST_VERSION="${PROJECT_VERSION}")
 
 include(GNUInstallDirs)
 
