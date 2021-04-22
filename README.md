@@ -21,6 +21,15 @@ sdl-jstest requires the following packages to build:
 * libncurses5-dev
 
 
+Submodules
+----------
+
+To fetch submodule dependencies:
+
+    git submodule init
+    git submodule update
+
+
 Compilation
 -----------
 
