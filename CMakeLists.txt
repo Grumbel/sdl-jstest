@@ -30,8 +30,6 @@ include(GNUInstallDirs)
 
 add_definitions(-DSDL_JSTEST_VERSION="${PROJECT_VERSION}")
 
-include(GNUInstallDirs)
-
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 
 set(CURSES_NEED_NCURSES TRUE)
