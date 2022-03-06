@@ -1,5 +1,5 @@
 [submodule "SDL_GameControllerDB"]
-	path = SDL_GameControllerDB
+	path = external/SDL_GameControllerDB
 	url = https://github.com/gabomdq/SDL_GameControllerDB.git
 [submodule "shared-modules"]
 	path = shared-modules
