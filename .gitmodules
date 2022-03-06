@@ -1,9 +1,6 @@
 [submodule "SDL_GameControllerDB"]
 	path = external/SDL_GameControllerDB
 	url = https://github.com/gabomdq/SDL_GameControllerDB.git
-[submodule "shared-modules"]
-	path = shared-modules
-	url = https://github.com/flathub/shared-modules.git
 [submodule "external/cmake-modules"]
 	path = external/cmake-modules
 	url = https://gitlab.com/grumbel/cmake-modules.git
