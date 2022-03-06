@@ -90,6 +90,7 @@ if(BUILD_SDL2_JSTEST)
   target_link_libraries(sdl2-jstest ${SDL2_LIBRARIES} ${CURSES_LIBRARIES})
   target_include_directories(sdl2-jstest PUBLIC ${SDL2_INCLUDE_DIRS} ${CURSES_INCLUDE_DIRS})
   target_compile_definitions(sdl2-jstest PUBLIC ${SDL2_CFLAGS_OTHER})
+  target_compile_definitions(sdl2-jstest PUBLIC SDL2_JSTEST_DATADIR=\"${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}\")
 
   configure_file(sdl2-jstest.appdata.xml.in ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.appdata.xml)
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.appdata.xml
@@ -106,6 +107,9 @@ if(BUILD_SDL2_JSTEST)
 
   file(COPY SDL_GameControllerDB/gamecontrollerdb.txt
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gamecontrollerdb.txt
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME})
 
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.1
     DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)

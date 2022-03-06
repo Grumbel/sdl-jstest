@@ -579,7 +579,11 @@ int main(int argc, char** argv)
     atexit(SDL_Quit);
 
     {
-      int ret = SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
+      int ret = SDL_GameControllerAddMappingsFromFile(SDL2_JSTEST_DATADIR "/gamecontrollerdb.txt");
+      if (ret < 0) {
+        ret = SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
+      }
+
       if (ret < 0)
       {
         fprintf(stderr, "error: failed to read gamecontrollerdb.txt: %s\n", SDL_GetError());
