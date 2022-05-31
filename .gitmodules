@@ -1,6 +1,9 @@
 [submodule "SDL_GameControllerDB"]
 	path = external/SDL_GameControllerDB
 	url = https://github.com/gabomdq/SDL_GameControllerDB.git
-[submodule "external/cmake-modules"]
-	path = external/cmake-modules
-	url = https://gitlab.com/grumbel/cmake-modules.git
+[submodule "external/tinycmmc"]
+	path = external/tinycmmc
+	url = https://github.com/grumbel/tinycmmc.git
+[submodule "external/sdl_gamecontrollerdb"]
+	path = external/sdl_gamecontrollerdb
+	url = https://github.com/gabomdq/SDL_GameControllerDB
