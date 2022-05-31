@@ -2,11 +2,11 @@
   "nodes": {
     "flake-utils": {
       "locked": {
-        "lastModified": 1644229661,
-        "narHash": "sha256-1YdnJAsNy69bpcjuoKdOYQX0YxZBiCYZo4Twxerqv7k=",
+        "lastModified": 1653893745,
+        "narHash": "sha256-0jntwV3Z8//YwuOjzhV2sgJJPt+HY6KhU7VZUL0fKZQ=",
         "owner": "numtide",
         "repo": "flake-utils",
-        "rev": "3cecb5b042f7f209c56ffd8371b2711a290ec797",
+        "rev": "1ed9fb1935d260de5fe1c2f7ee0ebaae17ed2fa1",
         "type": "github"
       },
       "original": {
@@ -17,16 +17,16 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1646406548,
-        "narHash": "sha256-xp+3f76ycZXNf9pG65Ef9KfDl1fas2UQu/cBe/pLd+c=",
+        "lastModified": 1653920503,
+        "narHash": "sha256-BBeCZwZImtjP3oYy4WogkQYy5OxNyfNciVSc1AfZgLQ=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "47cd6702934434dd02bc53a67dbce3e5493e33a2",
+        "rev": "a634c8f6c1fbf9b9730e01764999666f3436f10a",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "nixos-21.11",
+        "ref": "nixos-22.05",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -42,11 +42,11 @@
     "sdl_gamecontrollerdb": {
       "flake": false,
       "locked": {
-        "lastModified": 1646470035,
-        "narHash": "sha256-xquuhF06zf0ZJVI/1OWw7umekSAW2qTew+0B+OZfRmg=",
+        "lastModified": 1653964428,
+        "narHash": "sha256-YAUBgv+DprBdu9xGPMnrItitZg5I/lpM+nDmDRDyfjw=",
         "owner": "gabomdq",
         "repo": "SDL_GameControllerDB",
-        "rev": "4607c62604ece4ac5da960527b2f91af2f581e54",
+        "rev": "e7b38d37f9502a612e4d1054704a16d4517b4f77",
         "type": "github"
       },
       "original": {
@@ -65,17 +65,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1645974294,
-        "narHash": "sha256-Comma4p9L263ZMfhBpKKTuBVCq4Yd+hQrN33sGjwPAk=",
+        "lastModified": 1653988067,
+        "narHash": "sha256-UCp9cp8VFU/O4HERCBcSqnaBLQboSmEwDrD7F6FsIxo=",
         "owner": "grumbel",
-        "repo": "cmake-modules",
-        "rev": "297d1433067637903334b4c194eef5958e3f546f",
-        "type": "gitlab"
+        "repo": "tinycmmc",
+        "rev": "ad3e98dbc86157cce04e60343965970cb812e92e",
+        "type": "github"
       },
       "original": {
         "owner": "grumbel",
-        "repo": "cmake-modules",
-        "type": "gitlab"
+        "repo": "tinycmmc",
+        "type": "github"
       }
     }
   },
