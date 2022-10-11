@@ -17,7 +17,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(sdl-jstest)
 
-set(TINYCMMC_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/external/cmake-modules/modules/")
+set(TINYCMMC_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/external/tinycmmc/modules/")
 find_package(tinycmmc CONFIG)
 message(STATUS "tinycmmc module path: ${TINYCMMC_MODULE_PATH}")
 list(APPEND CMAKE_MODULE_PATH ${TINYCMMC_MODULE_PATH})
