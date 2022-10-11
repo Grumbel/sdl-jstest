@@ -103,7 +103,7 @@ void print_help(const char* prg)
   printf("  %s --test 1\n", prg);
 }
 
-void list_joysticks()
+void list_joysticks(void)
 {
   int num_joysticks = SDL_NumJoysticks();
   if (num_joysticks == 0)
