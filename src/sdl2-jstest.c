@@ -372,6 +372,9 @@ void test_gamecontroller_events(SDL_GameController* gamepad)
         printf("Recieved interrupt, exiting\n");
         break;
 
+      case SDL_KEYMAPCHANGED:
+        break;
+
       default:
         fprintf(stderr, "Error: Unhandled event type: %#x\n", event.type);
         break;
