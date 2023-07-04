@@ -27,8 +27,8 @@
             src = nixpkgs.lib.cleanSource ./.;
 
             patchPhase = ''
-              substituteInPlace CMakeLists.txt \
-                 --replace SDL_GameControllerDB/gamecontrollerdb.txt '${sdl_gamecontrollerdb}/gamecontrollerdb.txt'
+               rmdir external/sdl_gamecontrollerdb
+               ln -s "${sdl_gamecontrollerdb}" external/sdl_gamecontrollerdb
             '';
 
             nativeBuildInputs = with pkgs; [
@@ -52,8 +52,7 @@
             src = nixpkgs.lib.cleanSource ./.;
 
             patchPhase = ''
-                substituteInPlace CMakeLists.txt \
-                  --replace SDL_GameControllerDB/gamecontrollerdb.txt '${sdl_gamecontrollerdb}/gamecontrollerdb.txt'
+               ln -s ${sdl_gamecontrollerdb} external/sdl_gamecontrollerdb
             '';
 
             nativeBuildInputs = with pkgs; [
