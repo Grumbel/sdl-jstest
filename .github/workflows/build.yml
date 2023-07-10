@@ -21,6 +21,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: true
       - name: Install dependencies
         run: |
           cat /etc/issue
