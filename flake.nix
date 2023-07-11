@@ -9,64 +9,55 @@
 
     sdl_gamecontrollerdb.url = "github:gabomdq/SDL_GameControllerDB";
     sdl_gamecontrollerdb.flake = false;
+
+    SDL-win32.url = "github:grumnix/SDL-win32";
+    SDL-win32.inputs.nixpkgs.follows = "nixpkgs";
+    SDL-win32.inputs.tinycmmc.follows = "tinycmmc";
+
+    SDL2-win32.url = "github:grumnix/SDL2-win32";
+    SDL2-win32.inputs.nixpkgs.follows = "nixpkgs";
+    SDL2-win32.inputs.tinycmmc.follows = "tinycmmc";
   };
 
-  outputs = { self, nixpkgs, flake-utils, tinycmmc, sdl_gamecontrollerdb }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs = { self, nixpkgs, flake-utils, tinycmmc, sdl_gamecontrollerdb, SDL-win32, SDL2-win32 }:
+    tinycmmc.lib.eachSystemWithPkgs (pkgs:
       let
-        pkgs = nixpkgs.legacyPackages.${system};
-        pkgs_mingw32 = nixpkgs.legacyPackages.${system}.pkgsCross.mingw32;
+        pkgs_mingw32 = nixpkgs.legacyPackages.${pkgs.system}.pkgsCross.mingw32;
       in {
-        packages = ( rec {
+        packages = rec {
           default = sdl-jstest;
 
-          sdl-jstest = pkgs.stdenv.mkDerivation {
-            pname = "sdl-jstest";
-            version = "0.0.0";
+          ncurses-win32 = (pkgs.ncurses.override {
+            # enableStatic = true;
+          }).overrideAttrs (final: prev: {
+            preConfigure = ''
+              # workaround /homeless-shelter/.wine not writable
+              export HOME=$TEMPDIR
+            '' + prev.preConfigure;
 
-            src = nixpkgs.lib.cleanSource ./.;
-
-            patchPhase = ''
-               rmdir external/sdl_gamecontrollerdb
-               ln -s "${sdl_gamecontrollerdb}" external/sdl_gamecontrollerdb
+            preFixup = ''
+              # do nothing
             '';
+          });
 
-            nativeBuildInputs = with pkgs; [
-              cmake
-              pkgconfig
-            ];
+          sdl-jstest = pkgs.callPackage ./sdl-jstest.nix {
+            inherit self;
+            inherit sdl_gamecontrollerdb;
 
-            buildInputs = with pkgs; [
-              SDL
-              SDL2
-              ncurses
-            ] ++ [
-              tinycmmc.packages.${system}.default
-            ];
-           };
-        }) // {
-          i686-w64-mingw32-sdl-jstest = pkgs.stdenv.mkDerivation {
-            pname = "sdl-jstest";
-            version = "0.0.0";
+            # stdenv = pkgs.gcc12Stdenv;
+            tinycmmc = tinycmmc.packages.${pkgs.system}.default;
 
-            src = nixpkgs.lib.cleanSource ./.;
+            SDL = if pkgs.targetPlatform.isWindows
+                   then SDL-win32.packages.${pkgs.system}.default
+                   else pkgs.SDL;
 
-            patchPhase = ''
-               ln -s ${sdl_gamecontrollerdb} external/sdl_gamecontrollerdb
-            '';
+            SDL2 = if pkgs.targetPlatform.isWindows
+                   then SDL2-win32.packages.${pkgs.system}.default
+                   else pkgs.SDL2;
 
-            nativeBuildInputs = with pkgs; [
-              cmake
-              pkgconfig
-            ];
-
-            buildInputs = with pkgs; [
-              # pkgs_mingw32.SDL
-              pkgs_mingw32.SDL2
-              pkgs_mingw32.ncurses
-            ] ++ [
-              tinycmmc.packages.${system}.default
-            ];
+            ncurses = if pkgs.targetPlatform.isWindows
+                      then ncurses-win32
+                      else pkgs.ncurses;
           };
         };
       }
