@@ -7,6 +7,7 @@
 , ncurses
 , cmake
 , pkgconfig
+, mcfgthreads
 
 , tinycmmc
 , sdl_gamecontrollerdb
@@ -31,6 +32,7 @@ stdenv.mkDerivation {
   '' + (lib.optionalString stdenv.targetPlatform.isWindows ''
     mkdir -p $out/bin/
     find ${stdenv.cc.cc} -iname "*.dll" -exec ln -sfv {} $out/bin/ \;
+    find ${mcfgthreads} -iname "*.dll" -exec ln -sfv {} $out/bin/ \;
     ln -sfv ${SDL2}/bin/*.dll $out/bin/
     ln -sfv ${SDL}/bin/*.dll $out/bin/
     ln -sfv ${ncurses.dev}/bin/*.dll $out/bin/

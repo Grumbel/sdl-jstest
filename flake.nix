@@ -58,6 +58,10 @@
             ncurses = if pkgs.targetPlatform.isWindows
                       then ncurses-win32
                       else pkgs.ncurses;
+
+            mcfgthreads = if pkgs.targetPlatform.isWindows
+                          then pkgs.windows.mcfgthreads
+                          else null;
           };
         };
       }
