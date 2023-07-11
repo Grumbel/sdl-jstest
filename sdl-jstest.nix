@@ -15,7 +15,7 @@
 
 stdenv.mkDerivation {
   pname = "sdl-jstest";
-  version = "0.0.0";
+  version = "0.2.2";
 
   src = ./.;
 
