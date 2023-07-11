@@ -63,6 +63,29 @@
                           then pkgs.windows.mcfgthreads
                           else null;
           };
+
+          sdl-jstest-win32 = pkgs.runCommand "sdl-jstest-win32" {} ''
+            mkdir -p $out
+            mkdir -p $out/data/
+
+            cp -vr ${sdl-jstest}/bin/*.exe $out/
+            cp -vLr ${sdl-jstest}/bin/*.dll $out/
+            cp -vr ${sdl-jstest}/share/sdl-jstest/. $out/data/
+          '';
+
+          sdl-jstest-win32-zip = pkgs.runCommand "sdl-jstest-win32-zip" {} ''
+            mkdir -p $out
+            WORKDIR=$(mktemp -d)
+
+            cp --no-preserve mode,ownership --verbose --recursive \
+              ${sdl-jstest-win32}/. "$WORKDIR"
+
+            cd "$WORKDIR"
+            ${nixpkgs.legacyPackages.x86_64-linux.zip}/bin/zip \
+              -r \
+              $out/sdl-jstest-${sdl-jstest.version}-${pkgs.system}.zip \
+              .
+          '';
         };
       }
     );
