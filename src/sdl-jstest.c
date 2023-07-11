@@ -14,13 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <SDL.h>
 #include <assert.h>
 #include <curses.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <SDL.h>
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOGDI
+#  include <windows.h>
+#endif
 
 void print_bar(int pos, int len)
 {
@@ -87,6 +94,15 @@ void print_help(const char* prg)
 
 int main(int argc, char** argv)
 {
+#ifdef _WIN32
+  FILE* fp;
+
+  AllocConsole();
+  freopen_s(&fp, "CONIN$", "r", stdin);
+  freopen_s(&fp, "CONOUT$", "w", stdout);
+  freopen_s(&fp, "CONOUT$", "w", stderr);
+#endif
+
   if (argc == 1)
   {
     print_help(argv[0]);
