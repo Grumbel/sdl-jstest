@@ -192,11 +192,11 @@ int main(int argc, char** argv)
 
         int quit = 0;
         SDL_Event event;
+        bool something_new = TRUE;
         while(!quit)
         {
           SDL_Delay(10);
 
-          bool something_new = FALSE;
           while (SDL_PollEvent(&event)) {
             something_new = TRUE;
             switch(event.type)
@@ -302,6 +302,8 @@ int main(int argc, char** argv)
             printw("Press Ctrl-c to exit\n");
 
             refresh();
+
+            something_new = FALSE;
           }
 
           if ( getch() == 3 ) // Ctrl-c
