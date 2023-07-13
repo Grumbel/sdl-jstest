@@ -417,6 +417,8 @@ int main(int argc, char** argv)
       fprintf(stderr, "Try '%s --help' for more informations\n", argv[0]);
     }
   }
+
+  return EXIT_SUCCESS;
 }
 
 /* EOF */
