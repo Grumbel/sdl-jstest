@@ -38,20 +38,26 @@ void print_bar(int pos, int len)
 int str2int(const char* str, int* val)
 {
   char* endptr;
-  errno = 0;    /* To distinguish success/failure after call */
 
-  *val = strtol(str, &endptr, 10);
+  errno = 0;
+  long tmp = strtol(str, &endptr, 10);
 
-  /* Check for various possible errors */
-  if ((errno == ERANGE && (*val == LONG_MAX || *val == LONG_MIN))
-      || (errno != 0 && *val == 0)) {
+  // error
+  if (errno != 0) {
     return 0;
   }
 
-  if (endptr == str) {
+  // garbage at the end
+  if (*endptr != '\0') {
     return 0;
   }
 
+  // out of range of int
+  if (tmp < INT_MIN || tmp > INT_MAX) {
+    return 0;
+  }
+
+  *val = (int)tmp;
   return 1;
 }
 
