@@ -19,6 +19,11 @@ stdenv.mkDerivation {
 
   src = ./.;
 
+  cmakeFlags = [
+    "-DWARNINGS=ON"
+    "-DWERROR=ON"
+  ];
+
   patchPhase = ''
     # Nix behaves differently on a dirty git repository than on a clean one,
     # so we have to check.
