@@ -158,14 +158,33 @@ void test_joystick(int joy_idx)
     curs_set(0);
 
     int num_axes    = SDL_JoystickNumAxes(joy);
-    int num_buttons = SDL_JoystickNumButtons(joy);
-    int num_hats    = SDL_JoystickNumHats(joy);
-    int num_balls   = SDL_JoystickNumBalls(joy);
+    if (num_axes < 0) {
+      fprintf(stderr, "Unable to get SDL axes count: %s\n", SDL_GetError());
+      exit(EXIT_FAILURE);
+    }
 
-    Sint16* axes    = calloc(num_axes,    sizeof(Sint16));
-    Uint8*  buttons = calloc(num_buttons, sizeof(Uint8));
-    Uint8*  hats    = calloc(num_hats,    sizeof(Uint8));
-    Uint8*  balls   = calloc(num_balls,   2*sizeof(Sint16));
+    int num_buttons = SDL_JoystickNumButtons(joy);
+    if (num_buttons < 0) {
+      fprintf(stderr, "Unable to get SDL buttons count: %s\n", SDL_GetError());
+      exit(EXIT_FAILURE);
+    }
+
+    int num_hats    = SDL_JoystickNumHats(joy);
+    if (num_hats < 0) {
+      fprintf(stderr, "Unable to get SDL hats count: %s\n", SDL_GetError());
+      exit(EXIT_FAILURE);
+    }
+
+    int num_balls   = SDL_JoystickNumBalls(joy);
+    if (num_balls < 0) {
+      fprintf(stderr, "Unable to get SDL balls count: %s\n", SDL_GetError());
+      exit(EXIT_FAILURE);
+    }
+
+    Sint16* axes    = calloc((size_t)num_axes,    sizeof(Sint16));
+    Uint8*  buttons = calloc((size_t)num_buttons, sizeof(Uint8));
+    Uint8*  hats    = calloc((size_t)num_hats,    sizeof(Uint8));
+    Uint8*  balls   = calloc((size_t)num_balls,   2*sizeof(Sint16));
 
     int quit = 0;
     SDL_Event event;
