@@ -184,7 +184,7 @@ void test_joystick(int joy_idx)
     Sint16* axes    = calloc((size_t)num_axes,    sizeof(Sint16));
     Uint8*  buttons = calloc((size_t)num_buttons, sizeof(Uint8));
     Uint8*  hats    = calloc((size_t)num_hats,    sizeof(Uint8));
-    Uint8*  balls   = calloc((size_t)num_balls,   2*sizeof(Sint16));
+    Sint16*  balls   = calloc((size_t)num_balls,   2*sizeof(Sint16));
 
     int quit = 0;
     SDL_Event event;
