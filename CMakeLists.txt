@@ -25,6 +25,7 @@ list(APPEND CMAKE_MODULE_PATH ${TINYCMMC_MODULE_PATH})
 option(WARNINGS "Switch on extra warnings" OFF)
 option(WERROR "Turn warnings into errors" OFF)
 option(BUILD_TESTS "Build test cases" OFF)
+option(BUILD_NETWORK_TESTS "Build test cases using the network" OFF)
 option(BUILD_SDL_JSTEST "Build sdl-jstest" ON)
 option(BUILD_SDL2_JSTEST "Build sdl2-jstest" ON)
 
@@ -48,9 +49,14 @@ if(WERROR)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
 endif()
 
-if (BUILD_TESTS)
+if(BUILD_TESTS)
+  # add 'make test' target, use 'make test ARGS="-V"' or 'ctest -V' for verbose
   enable_testing()
 endif(BUILD_TESTS)
+
+if(NOT BUILD_NETWORK_TESTS)
+  set(APPSTREAM_UTIL_FLAGS --nonet)
+endif()
 
 if(BUILD_SDL_JSTEST)
   find_package(SDL REQUIRED)
@@ -68,7 +74,7 @@ if(BUILD_SDL_JSTEST)
   if (BUILD_TESTS)
     add_test(NAME sdl-jstest.appdata.xml
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-      COMMAND appstream-util validate-relax --nonet ${CMAKE_CURRENT_BINARY_DIR}/sdl-jstest.appdata.xml)
+      COMMAND appstream-util validate-relax ${APPSTREAM_UTIL_FLAGS} ${CMAKE_CURRENT_BINARY_DIR}/sdl-jstest.appdata.xml)
   endif(BUILD_TESTS)
 
   file(COPY sdl-jstest.1
@@ -101,7 +107,7 @@ if(BUILD_SDL2_JSTEST)
   if (BUILD_TESTS)
     add_test(NAME sdl2-jstest.appdata.xml
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-      COMMAND appstream-util validate-relax --nonet ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.appdata.xml)
+      COMMAND appstream-util validate-relax ${APPSTREAM_UTIL_FLAGS} ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.appdata.xml)
   endif(BUILD_TESTS)
 
   file(COPY sdl2-jstest.1
