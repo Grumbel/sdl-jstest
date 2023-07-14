@@ -20,10 +20,10 @@
   </description>
   <developer_name>Ingo Ruhnke</developer_name>
   <update_contact>grumbel@gmail.com</update_contact>
-  <url type="homepage">https://sdl-jstest.gitlab.io</url>
-  <url type="bugtracker">https://gitlab.com/sdl-jstest/sdl-jstest/issues</url>
+  <url type="homepage">https://sdl-jstest.github.io</url>
+  <url type="bugtracker">https://github.com/sdl-jstest/sdl-jstest/issues</url>
   <screenshots>
-    <screenshot type="default">https://sdl-jstest.gitlab.io/screenshot-0.2.1-1.png</screenshot>
+    <screenshot type="default">https://raw.githubusercontent.com/grumbel/sdl-jstest/master/screenshots/screenshot-0.2.1-2.png</screenshot>
   </screenshots>
   ​<releases>
   ​  <release version="@GIT_REPO_VERSION@" date="@GIT_REPO_DATE@" />
