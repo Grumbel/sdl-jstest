@@ -68,7 +68,7 @@ if(BUILD_SDL_JSTEST)
   if (BUILD_TESTS)
     add_test(NAME sdl-jstest.appdata.xml
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-      COMMAND appstream-util validate-relax ${CMAKE_CURRENT_BINARY_DIR}/sdl-jstest.appdata.xml)
+      COMMAND appstream-util validate-relax --nonet ${CMAKE_CURRENT_BINARY_DIR}/sdl-jstest.appdata.xml)
   endif(BUILD_TESTS)
 
   file(COPY sdl-jstest.1
@@ -101,7 +101,7 @@ if(BUILD_SDL2_JSTEST)
   if (BUILD_TESTS)
     add_test(NAME sdl2-jstest.appdata.xml
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-      COMMAND appstream-util validate-relax ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.appdata.xml)
+      COMMAND appstream-util validate-relax --nonet ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.appdata.xml)
   endif(BUILD_TESTS)
 
   file(COPY sdl2-jstest.1
