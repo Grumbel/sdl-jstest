@@ -10,6 +10,12 @@ especially useful if you want to test your `SDL_LINUX_JOYSTICK`
 configuration.
 
 
+Screenshots
+-----------
+
+![sdl-jstest 0.2.1](screenshots/screenshot-0.2.1-2.png)
+
+
 Requirements
 ------------
 
