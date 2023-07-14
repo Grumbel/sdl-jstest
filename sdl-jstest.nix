@@ -7,6 +7,7 @@
 , ncurses
 , cmake
 , pkgconfig
+, appstream-glib
 , mcfgthreads
 
 , tinycmmc
@@ -19,9 +20,12 @@ stdenv.mkDerivation {
 
   src = ./.;
 
+  doCheck = true;
+
   cmakeFlags = [
     "-DWARNINGS=ON"
     "-DWERROR=ON"
+    "-DBUILD_TESTS=ON"
   ];
 
   patchPhase = ''
@@ -46,6 +50,10 @@ stdenv.mkDerivation {
   nativeBuildInputs = [
     cmake
     pkgconfig
+  ];
+
+  nativeCheckInputs = [
+    appstream-glib
   ];
 
   buildInputs = [
