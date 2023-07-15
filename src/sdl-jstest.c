@@ -29,7 +29,7 @@
 #  include <windows.h>
 #endif
 
-void print_bar(int pos, int len)
+static void print_bar(int pos, int len)
 {
   addch('[');
   for(int i = 0; i < len; ++i)
@@ -42,7 +42,7 @@ void print_bar(int pos, int len)
   addch(']');
 }
 
-int str2int(const char* str, int* val)
+static int str2int(const char* str, int* val)
 {
   char* endptr;
 
@@ -68,7 +68,7 @@ int str2int(const char* str, int* val)
   return 1;
 }
 
-void print_joystick_info(int joy_idx, SDL_Joystick* joy)
+static void print_joystick_info(int joy_idx, SDL_Joystick* joy)
 {
   printf("Joystick Name:     '%s'\n", SDL_JoystickName(joy_idx));
   printf("Joystick Number:   %2d\n", joy_idx);
@@ -79,7 +79,7 @@ void print_joystick_info(int joy_idx, SDL_Joystick* joy)
   printf("\n");
 }
 
-void print_help(const char* prg)
+static void print_help(const char* prg)
 {
   printf("Usage: %s [OPTION]\n", prg);
   printf("List available joysticks or test a joystick.\n");
