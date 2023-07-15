@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void print_bar(int pos, int len)
+static void print_bar(int pos, int len)
 {
   addch('[');
   for(int i = 0; i < len; ++i)
@@ -35,7 +35,7 @@ void print_bar(int pos, int len)
   addch(']');
 }
 
-int str2int(const char* str, int* val)
+static int str2int(const char* str, int* val)
 {
   char* endptr;
 
@@ -61,7 +61,7 @@ int str2int(const char* str, int* val)
   return 1;
 }
 
-void print_joystick_info(int joy_idx, SDL_Joystick* joy, SDL_GameController* gamepad)
+static void print_joystick_info(int joy_idx, SDL_Joystick* joy, SDL_GameController* gamepad)
 {
   SDL_JoystickGUID guid = SDL_JoystickGetGUID(joy);
   char guid_str[1024];
@@ -87,7 +87,7 @@ void print_joystick_info(int joy_idx, SDL_Joystick* joy, SDL_GameController* gam
   printf("\n");
 }
 
-void print_help(const char* prg)
+static void print_help(const char* prg)
 {
   printf("Usage: %s [OPTION]\n", prg);
   printf("List available joysticks or test a joystick.\n");
@@ -109,7 +109,7 @@ void print_help(const char* prg)
   printf("  %s --test 1\n", prg);
 }
 
-void list_joysticks(void)
+static void list_joysticks(void)
 {
   int num_joysticks = SDL_NumJoysticks();
   if (num_joysticks == 0)
@@ -140,7 +140,7 @@ void list_joysticks(void)
   }
 }
 
-void test_joystick(int joy_idx)
+static void test_joystick(int joy_idx)
 {
   SDL_Joystick* joy = SDL_JoystickOpen(joy_idx);
   if (!joy)
@@ -313,8 +313,8 @@ void test_joystick(int joy_idx)
     endwin();
   }
 }
-
-void test_gamecontroller_events(SDL_GameController* gamepad)
+#if 0
+static void test_gamecontroller_events(SDL_GameController* gamepad)
 {
   assert(gamepad);
 
@@ -406,8 +406,9 @@ void test_gamecontroller_events(SDL_GameController* gamepad)
     }
   }
 }
+#endif
 
-void test_gamecontroller_state(SDL_GameController* gamepad)
+static void test_gamecontroller_state(SDL_GameController* gamepad)
 {
   assert(gamepad);
 
@@ -443,7 +444,7 @@ void test_gamecontroller_state(SDL_GameController* gamepad)
   }
 }
 
-void test_gamecontroller(int gamecontroller_idx)
+static void test_gamecontroller(int gamecontroller_idx)
 {
   SDL_GameController* gamepad = SDL_GameControllerOpen(gamecontroller_idx);
   if (!gamepad)
@@ -459,7 +460,7 @@ void test_gamecontroller(int gamecontroller_idx)
   }
 }
 
-void event_joystick(int joy_idx)
+static void event_joystick(int joy_idx)
 {
   SDL_Joystick* joy = SDL_JoystickOpen(joy_idx);
   if (!joy)
@@ -545,7 +546,7 @@ void event_joystick(int joy_idx)
   }
 }
 
-void test_rumble(int joy_idx)
+static void test_rumble(int joy_idx)
 {
   SDL_Joystick* joy = SDL_JoystickOpen(joy_idx);
   if (!joy)

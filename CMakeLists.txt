@@ -42,7 +42,7 @@ pkg_search_module(NCURSES REQUIRED ncursesw ncurses IMPORTED_TARGET)
 
 if(WARNINGS)
   set(CMAKE_C_FLAGS
-    "${CMAKE_C_FLAGS} -pedantic -Wall -Wextra -Wshadow -Wcast-qual -Wconversion -Wno-unused-parameter")
+    "${CMAKE_C_FLAGS} -pedantic -Wall -Wextra -Wshadow -Wcast-qual -Wconversion -Wmissing-prototypes -Wno-unused-parameter")
 endif()
 
 if(WERROR)
