@@ -29,6 +29,9 @@ option(BUILD_NETWORK_TESTS "Build test cases using the network" OFF)
 option(BUILD_SDL_JSTEST "Build sdl-jstest" ON)
 option(BUILD_SDL2_JSTEST "Build sdl2-jstest" ON)
 
+# FIXME: Move this into GetProjectVersion, get date from git
+string(TIMESTAMP PROJECT_DATE "%Y-%m-%d" UTC)
+
 include(GetProjectVersion)
 include(GNUInstallDirs)
 
