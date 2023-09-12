@@ -26,6 +26,6 @@
     <screenshot type="default">https://raw.githubusercontent.com/grumbel/sdl-jstest/master/screenshots/screenshot-0.2.1-2.png</screenshot>
   </screenshots>
   ​<releases>
-  ​  <release version="@GIT_REPO_VERSION@" date="@GIT_REPO_DATE@" />
+    <release version="@PROJECT_VERSION@" date="@PROJECT_DATE@" />
   </releases>
 </component>
