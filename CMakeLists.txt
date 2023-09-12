@@ -85,6 +85,10 @@ if(BUILD_SDL_JSTEST)
 
   install(TARGETS sdl-jstest
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+  install(FILES
+    sdl-jstest.svg
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
 endif()
 
 if(BUILD_SDL2_JSTEST)
@@ -124,6 +128,10 @@ if(BUILD_SDL2_JSTEST)
 
   install(TARGETS sdl2-jstest
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+  install(FILES
+    sdl2-jstest.svg
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
 endif()
 
 # EOF #
