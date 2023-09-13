@@ -52,10 +52,6 @@ stdenv.mkDerivation {
     pkgconfig
   ];
 
-  nativeCheckInputs = [
-    appstream-glib
-  ];
-
   buildInputs = [
     SDL
     SDL2
