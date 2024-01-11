@@ -6,7 +6,7 @@
 , SDL2
 , ncurses
 , cmake
-, pkgconfig
+, pkg-config
 , appstream-glib
 , mcfgthreads
 
@@ -49,7 +49,7 @@ stdenv.mkDerivation {
 
   nativeBuildInputs = [
     cmake
-    pkgconfig
+    pkg-config
   ];
 
   buildInputs = [
