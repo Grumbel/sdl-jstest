@@ -555,6 +555,18 @@ static void test_rumble(int joy_idx)
   }
   else
   {
+#if SDL_VERSION_ATLEAST(2,0,18)
+    if (SDL_JoystickHasRumble(joy) == SDL_FALSE)
+    {
+      fprintf(stderr, "rumble not supported on joystick %d\n", joy_idx);
+    }
+    else
+    {
+      SDL_GameControllerUpdate();
+      SDL_JoystickRumble(joy, 0xFFFF, 0xFFFF, 3000);
+      SDL_Delay(3000);
+    }
+#else /* SDL_VERSION_ATLEAST(2,0,18) */
     SDL_Haptic* haptic = SDL_HapticOpenFromJoystick(joy);
     if (!haptic)
     {
@@ -581,6 +593,7 @@ static void test_rumble(int joy_idx)
       }
       SDL_HapticClose(haptic);
     }
+#endif /* SDL_VERSION_ATLEAST(2,0,18) */
     SDL_JoystickClose(joy);
   }
 }
