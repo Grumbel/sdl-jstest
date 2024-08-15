@@ -416,32 +416,143 @@ static void test_gamecontroller_state(SDL_GameController* gamepad)
   int quit = 0;
   SDL_Event event;
 
-  while(!quit && SDL_WaitEvent(&event))
+  initscr();
+
+  // cbreak();
+  noecho();
+  nodelay(stdscr, TRUE);
+  // nonl();
+  curs_set(0);
+
+  int num_axes = SDL_CONTROLLER_AXIS_MAX;
+  int num_buttons = SDL_CONTROLLER_BUTTON_MAX;
+
+  Sint16 *axes = calloc((size_t)num_axes, sizeof(Sint16));
+  Uint8 *buttons = calloc((size_t)num_buttons, sizeof(Uint8));
+
+  bool has_gyro = SDL_GameControllerHasSensor(gamepad, SDL_SENSOR_GYRO);
+  if(has_gyro)
   {
-    switch(event.type)
-    {
-      case SDL_QUIT:
-        quit = 1;
-        printf("Recieved interrupt, exiting\n");
-        break;
-    }
-
-    for(int btn = 0; btn < SDL_CONTROLLER_BUTTON_MAX; ++btn)
-    {
-      printf("%s:%d ",
-             SDL_GameControllerGetStringForButton(btn),
-             SDL_GameControllerGetButton(gamepad, btn));
-    }
-
-    for(int axis = 0; axis < SDL_CONTROLLER_AXIS_MAX; ++axis)
-    {
-      printf("%s:%6d ",
-             SDL_GameControllerGetStringForAxis(axis),
-             SDL_GameControllerGetAxis(gamepad, axis));
-    }
-
-    printf("\n");
+    SDL_GameControllerSetSensorEnabled(gamepad, SDL_SENSOR_GYRO, SDL_TRUE);
   }
+  bool has_accel = SDL_GameControllerHasSensor(gamepad, SDL_SENSOR_ACCEL);
+  if(has_accel)
+  {
+    SDL_GameControllerSetSensorEnabled(gamepad, SDL_SENSOR_ACCEL, SDL_TRUE);
+  }
+  float gyro[3] = {0.0f, 0.0f, 0.0f};
+  float accel[3] = {0.0f, 0.0f, 0.0f};
+
+  bool has_led = SDL_GameControllerHasLED(gamepad);
+  int touchpads = SDL_GameControllerGetNumTouchpads(gamepad);
+  bool has_rumble = SDL_GameControllerHasRumble(gamepad);
+
+  while (!quit && SDL_WaitEvent(&event))
+  {
+    switch (event.type)
+    {
+    case SDL_CONTROLLERSENSORUPDATE:
+    {
+      switch (event.csensor.sensor)
+      {
+      case SDL_SENSOR_GYRO:
+        gyro[0] = event.csensor.data[0];
+        gyro[1] = event.csensor.data[1];
+        gyro[2] = event.csensor.data[2];
+        break;
+      case SDL_SENSOR_ACCEL:
+        accel[0] = event.csensor.data[0];
+        accel[1] = event.csensor.data[1];
+        accel[2] = event.csensor.data[2];
+        break;
+      }
+      break;
+    }
+    case SDL_CONTROLLERAXISMOTION:
+      assert(event.caxis.axis < num_axes);
+      axes[event.caxis.axis] = event.caxis.value;
+      break;
+    case SDL_CONTROLLERBUTTONDOWN:
+    case SDL_CONTROLLERBUTTONUP:
+      assert(event.cbutton.button < num_buttons);
+      buttons[event.cbutton.button] = event.cbutton.state;
+      break;
+    case SDL_QUIT:
+      quit = 1;
+      printf("Recieved interrupt, exiting\n");
+      break;
+    }
+    // clear();
+    move(0, 0);
+
+    printw("Joystick Name:   '%s'\n", SDL_GameControllerName(gamepad));
+    printw("Joystick Number: %d\n", SDL_GameControllerGetPlayerIndex(gamepad));
+    printw("\n");
+
+    if (has_gyro)
+      printw("Gyro:  [ %6.3f  %6.3f  %6.3f ]\n", gyro[0], gyro[1], gyro[2]);
+    if (has_accel)
+      printw("Accel: [ %6.3f  %6.3f  %6.3f ]\n", accel[0], accel[1], accel[2]);
+    printw("\n");
+
+    printw("Axes:\n");
+    for (int i = 0; i < num_axes; ++i)
+    {
+      int len = COLS - 20;
+      printw("  %2d: %6d  ", i, axes[i]);
+      print_bar((axes[i] + 32767) * (len - 1) / 65534, len);
+      addch('\n');
+    }
+    printw("\n");
+
+    printw("Buttons:\n");
+    // A, B, X, Y
+    for (int i = 0; i < 4; ++i)
+    {
+      printw("  %9.9s: %s", SDL_GameControllerGetStringForButton(i), buttons[i] ? "[#]" : "[ ]");
+    }
+    printw("\n");
+    // Back, Guide, Start
+    for (int i = 4; i < 7; ++i)
+    {
+      printw("  %9.9s: %s", SDL_GameControllerGetStringForButton(i), buttons[i] ? "[#]" : "[ ]");
+    }
+    printw("\n");
+    // Left stick, right stick, left shoulder, right shoulder
+    for (int i = 7; i < 11; ++i)
+    {
+      printw("  %9.9s: %s", SDL_GameControllerGetStringForButton(i), buttons[i] ? "[#]" : "[ ]");
+    }
+    printw("\n");
+    // D-pad
+    for (int i = 11; i < 15; ++i)
+    {
+      printw("  %9.9s: %s", SDL_GameControllerGetStringForButton(i), buttons[i] ? "[#]" : "[ ]");
+    }
+    printw("\n");
+    // Rest
+    for (int i = 15; i < num_buttons; ++i)
+    {
+      printw("  %9.9s: %s", SDL_GameControllerGetStringForButton(i), buttons[i] ? "[#]" : "[ ]");
+    }
+    printw("\n");
+    printw("\n");
+
+    printw("Misc:\n");
+    printw("  %9.9s: %s", "LED", has_led ? "[#]" : "[ ]");
+    printw("  %9.9s: %d", "Touchpads", touchpads);
+    printw("  %9.9s: %s", "Rumble", has_rumble ? "[#]" : "[ ]");
+
+    printw("\n");
+    printw("\n");
+    printw("Press Ctrl-c to exit\n");
+
+    refresh();
+  }
+
+  free(buttons);
+  free(axes);
+  endwin();
 }
 
 static void test_gamecontroller(int gamecontroller_idx)
