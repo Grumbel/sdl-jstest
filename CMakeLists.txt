@@ -26,7 +26,7 @@ option(WARNINGS "Switch on extra warnings" OFF)
 option(WERROR "Turn warnings into errors" OFF)
 option(BUILD_TESTS "Build test cases" OFF)
 option(BUILD_NETWORK_TESTS "Build test cases using the network" OFF)
-option(BUILD_SDL_JSTEST "Build sdl-jstest" ON)
+option(BUILD_SDL_JSTEST "Build sdl-jstest" OFF)
 option(BUILD_SDL2_JSTEST "Build sdl2-jstest" ON)
 
 include(GetProjectVersion)
@@ -40,78 +40,83 @@ find_package(PkgConfig REQUIRED)
 
 pkg_search_module(NCURSES REQUIRED ncursesw ncurses IMPORTED_TARGET)
 
-if(WARNINGS)
-  set(CMAKE_C_FLAGS
-    "${CMAKE_C_FLAGS} -pedantic -Wall -Wextra -Wshadow -Wcast-qual -Wconversion -Wmissing-prototypes -Wno-unused-parameter")
-endif()
+if (WARNINGS)
+    set(CMAKE_C_FLAGS
+            "${CMAKE_C_FLAGS} -pedantic -Wall -Wextra -Wshadow -Wcast-qual -Wconversion -Wmissing-prototypes -Wno-unused-parameter")
+endif ()
 
-if(WERROR)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
-endif()
+if (WERROR)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
+endif ()
 
-if(BUILD_TESTS)
-  # add 'make test' target, use 'make test ARGS="-V"' or 'ctest -V' for verbose
-  enable_testing()
-endif(BUILD_TESTS)
+if (BUILD_TESTS)
+    # add 'make test' target, use 'make test ARGS="-V"' or 'ctest -V' for verbose
+    enable_testing()
+endif (BUILD_TESTS)
 
-if(NOT BUILD_NETWORK_TESTS)
-  set(APPSTREAM_UTIL_FLAGS --nonet)
-endif()
+if (NOT BUILD_NETWORK_TESTS)
+    set(APPSTREAM_UTIL_FLAGS --nonet)
+endif ()
 
-if(BUILD_SDL_JSTEST)
-  find_package(SDL REQUIRED)
+if (BUILD_SDL_JSTEST)
+    find_package(SDL REQUIRED)
 
-  add_executable(sdl-jstest src/sdl-jstest.c)
-  target_link_libraries(sdl-jstest
-    SDL::SDL
-    PkgConfig::NCURSES
+    add_executable(sdl-jstest src/sdl-jstest.c)
+    target_link_libraries(sdl-jstest
+            SDL::SDL
+            PkgConfig::NCURSES
     )
 
-  file(COPY sdl-jstest.1
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    file(COPY sdl-jstest.1
+            DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sdl-jstest.1
-    DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sdl-jstest.1
+            DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 
-  install(TARGETS sdl-jstest
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(TARGETS sdl-jstest
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-  install(FILES
-    sdl-jstest.svg
-    DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
-endif()
+    install(FILES
+            sdl-jstest.svg
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
+endif ()
 
-if(BUILD_SDL2_JSTEST)
-  # not using find_package() as that includes some invalid include
-  # directories that make cmake fail
-  pkg_search_module(SDL2 REQUIRED sdl2 IMPORTED_TARGET)
+if (BUILD_SDL2_JSTEST)
+    find_package(PkgConfig)
+    option(SDL_CUSTOM_SRC "Use a custom SDL source location (useful to better debug)" OFF)
+    if (SDL_CUSTOM_SRC)
+        SET(SDL_TEST OFF)
+        SET(SDL_HIDAPI_JOYSTICK ON)
+        add_subdirectory(${SDL_CUSTOM_SRC} ${CMAKE_CURRENT_BINARY_DIR}/sdl EXCLUDE_FROM_ALL)
+    else ()
+        find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2)
+    endif ()
 
-  link_directories(${SDL2_LIBRARY_DIRS})
-  add_executable(sdl2-jstest src/sdl2-jstest.c)
-  target_link_libraries(sdl2-jstest
-    PkgConfig::SDL2
-    PkgConfig::NCURSES
+    add_executable(sdl2-jstest src/sdl2-jstest.c src/utils/dualsense.h)
+    target_link_libraries(sdl2-jstest
+            SDL2::SDL2
+            PkgConfig::NCURSES
     )
-  target_compile_definitions(sdl2-jstest PUBLIC SDL2_JSTEST_DATADIR=\"${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}\")
+    target_compile_definitions(sdl2-jstest PUBLIC SDL2_JSTEST_DATADIR=\"${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}\")
 
-  file(COPY sdl2-jstest.1
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    file(COPY sdl2-jstest.1
+            DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-  file(COPY external/sdl_gamecontrollerdb/gamecontrollerdb.txt
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    file(COPY external/sdl_gamecontrollerdb/gamecontrollerdb.txt
+            DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gamecontrollerdb.txt
-    DESTINATION ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME})
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gamecontrollerdb.txt
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME})
 
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.1
-    DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.1
+            DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 
-  install(TARGETS sdl2-jstest
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(TARGETS sdl2-jstest
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-  install(FILES
-    sdl2-jstest.svg
-    DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
-endif()
+    install(FILES
+            sdl2-jstest.svg
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
+endif ()
 
 # EOF #
