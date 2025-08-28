@@ -4,3 +4,9 @@
 [submodule "external/sdl_gamecontrollerdb"]
 	path = external/sdl_gamecontrollerdb
 	url = https://github.com/gabomdq/SDL_GameControllerDB
+[submodule "external/SDL"]
+	path = external/SDL
+	url = https://github.com/vtisweden/SDL
+[submodule "external/PDCurses"]
+	path = external/PDCurses
+	url = https://github.com/vtisweden/PDCurses

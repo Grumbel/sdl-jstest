@@ -598,6 +598,9 @@ static void test_rumble(int joy_idx)
   }
 }
 
+// SDL defines main to SDL_main on Windows, but that is wrong since we're building
+// a console application, where main() is actually called main().
+#undef main
 int main(int argc, char** argv)
 {
   if (argc == 1)

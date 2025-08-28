@@ -36,9 +36,12 @@ add_definitions(-DSDL_JSTEST_VERSION="${PROJECT_VERSION}")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 
+if(WIN32)
+  add_subdirectory(external/PDCurses)
+else()
 find_package(PkgConfig REQUIRED)
-
 pkg_search_module(NCURSES REQUIRED ncursesw ncurses IMPORTED_TARGET)
+endif()
 
 if(WARNINGS)
   set(CMAKE_C_FLAGS
@@ -82,16 +85,25 @@ if(BUILD_SDL_JSTEST)
 endif()
 
 if(BUILD_SDL2_JSTEST)
+
+  add_subdirectory(external/SDL EXCLUDE_FROM_ALL)
+
   # not using find_package() as that includes some invalid include
   # directories that make cmake fail
-  pkg_search_module(SDL2 REQUIRED sdl2 IMPORTED_TARGET)
+  #find_package(SDL2 REQUIRED)
+  #pkg_search_module(SDL2 REQUIRED sdl2 IMPORTED_TARGET)
 
   link_directories(${SDL2_LIBRARY_DIRS})
   add_executable(sdl2-jstest src/sdl2-jstest.c)
   target_link_libraries(sdl2-jstest
-    PkgConfig::SDL2
-    PkgConfig::NCURSES
+    SDL2::SDL2
     )
+  if(WIN32)
+    target_link_libraries(sdl2-jstest PDCurses)
+    target_include_directories(sdl2-jstest PUBLIC ${CMAKE_SOURCE_DIR}/external/PDCurses)
+  else()
+    target_link_libraries(sdl2-jstest PkgConfig::NCURSES)
+  endif()
   target_compile_definitions(sdl2-jstest PUBLIC SDL2_JSTEST_DATADIR=\"${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}\")
 
   file(COPY sdl2-jstest.1
