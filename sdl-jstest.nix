@@ -34,6 +34,7 @@ stdenv.mkDerivation {
     if [ -d external/sdl_gamecontrollerdb ]; then
       rmdir external/sdl_gamecontrollerdb
     fi
+    mkdir -p external/
     ln -s "${sdl_gamecontrollerdb}" external/sdl_gamecontrollerdb
   '';
 

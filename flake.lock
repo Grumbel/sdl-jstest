@@ -11,11 +11,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1687870502,
-        "narHash": "sha256-63zXBDR12zWDbfC4YhT+pyhSBaJQKyQS8OCLz2k+TSw=",
+        "lastModified": 1716729328,
+        "narHash": "sha256-2rhsui/qDLq5SDdCZqg+0y2xjMAOXgCYGmMV2n7IF3Q=",
         "owner": "grumnix",
         "repo": "SDL-win32",
-        "rev": "f9bc861ff89802a0a30b1b7c7b8095f8df5d178e",
+        "rev": "874b689751561fa2ebc7959935bd24a0daf85a3b",
         "type": "github"
       },
       "original": {
@@ -35,11 +35,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1687870306,
-        "narHash": "sha256-IRbYRi6XhoHJMxEObuiqWxSwY+DaPXEHkdn9BuOvV6E=",
+        "lastModified": 1753127534,
+        "narHash": "sha256-73UFk9wGZb0CQ2EpFaXRczHzUUlOzK/Ov2KP3ewk4qw=",
         "owner": "grumnix",
         "repo": "SDL2-win32",
-        "rev": "31c1fc30c3e316c94b17e5090b4e6c21cab08830",
+        "rev": "278a40a7bff4c0b0bf4f5ad1c528308df4a1b0f9",
         "type": "github"
       },
       "original": {
@@ -51,18 +51,20 @@
     "SDL2_src": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-7F8KGZaY6R7tzv/+0gNNm1FvDyrY4Z4PPuzYu+3pvNM=",
+        "lastModified": 1748906407,
+        "narHash": "sha256-aakdhaTL0dgt2BQEtv3w6pp1mwOrmNzEorh3lLxJgyo=",
         "type": "tarball",
-        "url": "https://libsdl.org/release/SDL2-devel-2.0.22-mingw.tar.gz"
+        "url": "https://libsdl.org/release/SDL2-devel-2.32.8-mingw.tar.gz"
       },
       "original": {
         "type": "tarball",
-        "url": "https://libsdl.org/release/SDL2-devel-2.0.22-mingw.tar.gz"
+        "url": "https://libsdl.org/release/SDL2-devel-2.32.8-mingw.tar.gz"
       }
     },
     "SDL_src": {
       "flake": false,
       "locked": {
+        "lastModified": 1326954629,
         "narHash": "sha256-0tffZEi/OVCkHvSrfVZRnK+qpWqq9m1+1QQz9itkVNM=",
         "type": "tarball",
         "url": "https://www.libsdl.org/release/SDL-1.2.15.tar.gz"
@@ -77,11 +79,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1689068808,
-        "narHash": "sha256-6ixXo3wt24N/melDWjq70UuHQLxGV8jZvooRanIHXw0=",
+        "lastModified": 1731533236,
+        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
         "owner": "numtide",
         "repo": "flake-utils",
-        "rev": "919d646de7be200f3bf08cb76ae1f09402b6f9b4",
+        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
         "type": "github"
       },
       "original": {
@@ -92,16 +94,16 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1704874635,
-        "narHash": "sha256-YWuCrtsty5vVZvu+7BchAxmcYzTMfolSPP5io8+WYCg=",
+        "lastModified": 1762977756,
+        "narHash": "sha256-4PqRErxfe+2toFJFgcRKZ0UI9NSIOJa+7RXVtBhy4KE=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "3dc440faeee9e889fe2d1b4d25ad0f430d449356",
+        "rev": "c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "nixos-23.11",
+        "ref": "nixos-unstable",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -119,11 +121,11 @@
     "sdl_gamecontrollerdb": {
       "flake": false,
       "locked": {
-        "lastModified": 1689064855,
-        "narHash": "sha256-1Sw7qK5mGIpi463tiue5P6HrkvrN4J+kChaWPNvRs6Q=",
+        "lastModified": 1762256009,
+        "narHash": "sha256-xM/hdwLsNLisXKXLP2Np5enmL/q27xsV4OHSsM5vsuw=",
         "owner": "gabomdq",
         "repo": "SDL_GameControllerDB",
-        "rev": "ab9a5e8706b3bd1ad19377439d548e7554af2fef",
+        "rev": "958e252520ece96cd1b03d5ff0d835db2f048991",
         "type": "github"
       },
       "original": {
@@ -157,11 +159,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1684952066,
-        "narHash": "sha256-yS8/+TOL2OA7f/RQs1Zr20mmlPFIVvFOgWShLAQvH8w=",
+        "lastModified": 1763256011,
+        "narHash": "sha256-CpQWAHdeLUYd28cT9heG05p6RX9WF7QslqNHoBi931E=",
         "owner": "grumbel",
         "repo": "tinycmmc",
-        "rev": "01fe277570a290837726de6eb3c16d617bfda28c",
+        "rev": "2e007ba059a4991c011a7193c9d7df28826c9adc",
         "type": "github"
       },
       "original": {
