@@ -22,7 +22,7 @@
   outputs = { self, nixpkgs, flake-utils, tinycmmc, sdl_gamecontrollerdb, SDL-win32, SDL2-win32 }:
     tinycmmc.lib.eachSystemWithPkgs (pkgs:
       let
-        pkgs_mingw32 = nixpkgs.legacyPackages.${pkgs.system}.pkgsCross.mingw32;
+        pkgs_mingw32 = nixpkgs.legacyPackages.${pkgs.stdenv.hostPlatform.system}.pkgsCross.mingw32;
       in {
         packages = rec {
           default = sdl-jstest;
@@ -44,21 +44,21 @@
             inherit self;
             inherit sdl_gamecontrollerdb;
 
-            tinycmmc = tinycmmc.packages.${pkgs.system}.default;
+            tinycmmc = tinycmmc.packages.${pkgs.stdenv.hostPlatform.system}.default;
 
-            SDL = if pkgs.targetPlatform.isWindows
-                   then SDL-win32.packages.${pkgs.system}.default
+            SDL = if pkgs.stdenv.hostPlatform.isWindows
+                   then SDL-win32.packages.${pkgs.stdenv.hostPlatform.system}.default
                    else pkgs.SDL;
 
-            SDL2 = if pkgs.targetPlatform.isWindows
-                   then SDL2-win32.packages.${pkgs.system}.default
+            SDL2 = if pkgs.stdenv.hostPlatform.isWindows
+                   then SDL2-win32.packages.${pkgs.stdenv.hostPlatform.system}.default
                    else pkgs.SDL2;
 
-            ncurses = if pkgs.targetPlatform.isWindows
+            ncurses = if pkgs.stdenv.hostPlatform.isWindows
                       then ncurses-win32
                       else pkgs.ncurses;
 
-            mcfgthreads = if pkgs.targetPlatform.isWindows
+            mcfgthreads = if pkgs.stdenv.hostPlatform.isWindows
                           then pkgs.windows.mcfgthreads
                           else null;
           };
@@ -82,7 +82,7 @@
             cd "$WORKDIR"
             ${nixpkgs.legacyPackages.x86_64-linux.zip}/bin/zip \
               -r \
-              $out/sdl-jstest-${sdl-jstest.version}-${pkgs.system}.zip \
+              $out/sdl-jstest-${sdl-jstest.version}-${pkgs.stdenv.hostPlatform.system}.zip \
               .
           '';
         };

@@ -94,11 +94,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1762977756,
-        "narHash": "sha256-4PqRErxfe+2toFJFgcRKZ0UI9NSIOJa+7RXVtBhy4KE=",
+        "lastModified": 1764242076,
+        "narHash": "sha256-sKoIWfnijJ0+9e4wRvIgm/HgE27bzwQxcEmo2J/gNpI=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
+        "rev": "2fad6eac6077f03fe109c4d4eb171cf96791faa4",
         "type": "github"
       },
       "original": {
@@ -121,11 +121,11 @@
     "sdl_gamecontrollerdb": {
       "flake": false,
       "locked": {
-        "lastModified": 1762256009,
-        "narHash": "sha256-xM/hdwLsNLisXKXLP2Np5enmL/q27xsV4OHSsM5vsuw=",
+        "lastModified": 1764328503,
+        "narHash": "sha256-Za1TtweRWKiwJfvtjvaM+HMFjRgx7GTcg4S4xCRTcNE=",
         "owner": "gabomdq",
         "repo": "SDL_GameControllerDB",
-        "rev": "958e252520ece96cd1b03d5ff0d835db2f048991",
+        "rev": "cbfc87488e446c446d5b5ded1d99a0df2273d499",
         "type": "github"
       },
       "original": {

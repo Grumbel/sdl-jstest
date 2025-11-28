@@ -39,7 +39,7 @@ stdenv.mkDerivation {
   '';
 
   postFixup = ''
-  '' + (lib.optionalString stdenv.targetPlatform.isWindows ''
+  '' + (lib.optionalString stdenv.hostPlatform.isWindows ''
     mkdir -p $out/bin/
     find ${stdenv.cc.cc} -iname "*.dll" -exec ln -sfv {} $out/bin/ \;
     find ${mcfgthreads} -iname "*.dll" -exec ln -sfv {} $out/bin/ \;
