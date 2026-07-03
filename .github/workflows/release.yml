@@ -1,0 +1,72 @@
+name: Release
+on:
+    release:
+        types: [published]
+
+
+jobs:
+    # Build universal and portable AppImage package.
+    build-appimage:
+        # Version of ubuntu building this appimage, it shouldn't be the latest verion of ubuntu to avoid breaking compatibility with older systems
+        name: Build AppImage package
+        runs-on: ubuntu-20.04
+        steps:
+          - name: Install dependencies
+            run: |
+              cat /etc/issue
+              sudo apt-get update
+              sudo apt-get install -y \
+                ninja-build \
+                cmake \
+                libsdl2-dev
+              ninja --version
+              cmake --version
+              gcc --version
+        #  Replace original library with the newer one
+          - name: Build and install newer SDL2
+            run: |
+              git clone https://github.com/libsdl-org/SDL.git -b release-2.30.11
+              cd SDL
+              mkdir build
+              cd build
+              cmake ..
+              cmake --build .
+              sudo cmake --install .
+              sudo cp /usr/local/lib/libSDL2-2.0.so.0 /usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0
+          - uses: actions/checkout@v4
+            with:
+                fetch-depth: 0
+                submodules: 'true'
+          - name: Prepare files needed to create AppImage
+            run: |
+              mkdir build && cd ./build
+              wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+              wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+              chmod +x linuxdeploy-x86_64.AppImage
+              chmod +x appimagetool-x86_64.AppImage
+          - name: Configure
+            shell: bash
+            run: |
+              cd build
+              cmake .. \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DBUILD_SDL_JSTEST=OFF \
+                -DCMAKE_INSTALL_PREFIX=/usr \
+                -DWARNINGS=ON \
+                -DWERROR=ON
+          - name: Build
+            shell: bash
+            run: |
+              cd build
+              make VERBOSE=1
+              make install DESTDIR=AppDir
+          - name: Create AppImage file
+            run: |
+                 cd build
+                 ./linuxdeploy-x86_64.AppImage --appdir AppDir --executable sdl2-jstest --create-desktop-file
+                 ./appimagetool-x86_64.AppImage AppDir/
+          - name: Upload binaries to release
+            uses: AButler/upload-release-assets@v3.0
+            with:
+                files: ./build/sdl*.AppImage
+                repo-token: ${{ github.token }}
