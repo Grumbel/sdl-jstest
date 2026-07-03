@@ -14,9 +14,14 @@
 , sdl_gamecontrollerdb
 }:
 
+let
+  versionBase = lib.strings.removeSuffix "\n" (builtins.readFile ./VERSION);
+  gitRev = "${self.shortRev or self.dirtyShortRev or "dirty"}";
+  version = "${versionBase}+g${gitRev}";
+in
 stdenv.mkDerivation {
   pname = "sdl-jstest";
-  version = "0.2.2";
+  inherit version;
 
   src = ./.;
 
