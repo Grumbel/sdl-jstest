@@ -228,6 +228,12 @@ static void test_joystick(int joy_idx)
                     balls[2 * event.jball.ball + 1] = event.jball.yrel;
                     break;
 
+                case SDL_CLIPBOARDUPDATE:
+                    break;
+
+                case SDL_KEYMAPCHANGED:
+                    break;
+
                 case SDL_QUIT:
                     quit = 1;
                     printf("Recieved interrupt, exiting\n");
