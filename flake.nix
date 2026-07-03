@@ -44,8 +44,6 @@
             inherit self;
             inherit sdl_gamecontrollerdb;
 
-            tinycmmc = tinycmmc.packages.${pkgs.stdenv.hostPlatform.system}.default;
-
             SDL = if pkgs.stdenv.hostPlatform.isWindows
                    then SDL-win32.packages.${pkgs.stdenv.hostPlatform.system}.default
                    else pkgs.SDL;

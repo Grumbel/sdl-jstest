@@ -31,6 +31,7 @@ stdenv.mkDerivation {
     "-DWARNINGS=ON"
     "-DWERROR=ON"
     "-DBUILD_TESTS=ON"
+    "-DPROJECT_VERSION_FULL=${version}"
   ];
 
   patchPhase = ''
