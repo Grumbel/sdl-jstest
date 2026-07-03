@@ -19,7 +19,7 @@ project(sdl-jstest)
 
 option(WARNINGS "Switch on extra warnings" OFF)
 option(WERROR "Turn warnings into errors" OFF)
-option(BUILD_SDL_JSTEST "Build sdl-jstest" OFF)
+option(BUILD_SDL_JSTEST "Build sdl-jstest" ON)
 option(BUILD_SDL2_JSTEST "Build sdl2-jstest" ON)
 
 include(GNUInstallDirs)
