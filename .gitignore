@@ -3,3 +3,5 @@
 /.flatpak-builder/
 /result
 /result-*
+cmake-build-debug/
+.idea/
