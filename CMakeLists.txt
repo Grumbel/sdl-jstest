@@ -19,8 +19,6 @@ project(sdl-jstest)
 
 option(WARNINGS "Switch on extra warnings" OFF)
 option(WERROR "Turn warnings into errors" OFF)
-option(BUILD_TESTS "Build test cases" OFF)
-option(BUILD_NETWORK_TESTS "Build test cases using the network" OFF)
 option(BUILD_SDL_JSTEST "Build sdl-jstest" OFF)
 option(BUILD_SDL2_JSTEST "Build sdl2-jstest" ON)
 
@@ -45,15 +43,6 @@ endif ()
 
 if (WERROR)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
-endif ()
-
-if (BUILD_TESTS)
-    # add 'make test' target, use 'make test ARGS="-V"' or 'ctest -V' for verbose
-    enable_testing()
-endif (BUILD_TESTS)
-
-if (NOT BUILD_NETWORK_TESTS)
-    set(APPSTREAM_UTIL_FLAGS --nonet)
 endif ()
 
 if (BUILD_SDL_JSTEST)

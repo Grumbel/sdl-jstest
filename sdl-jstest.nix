@@ -30,7 +30,6 @@ stdenv.mkDerivation {
   cmakeFlags = [
     "-DWARNINGS=ON"
     "-DWERROR=ON"
-    "-DBUILD_TESTS=ON"
     "-DPROJECT_VERSION_FULL=${version}"
   ];
 
