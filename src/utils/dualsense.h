@@ -47,7 +47,7 @@ static void CyclePS5TriggerEffect(SDL_GameController* gamepad)
         {0x06, 15, 63, 128, 0, 0, 0, 0, 0, 0, 0},
     };
 
-    trigger_effect = (trigger_effect + 1) % SDL_arraysize(effects);
+    trigger_effect = (trigger_effect + 1) % (int)SDL_arraysize(effects);
 
     SDL_zero(state);
     state.ucEnableBits1 |= (0x04 | 0x08); /* Modify right and left trigger effect respectively */
