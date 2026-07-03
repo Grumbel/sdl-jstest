@@ -21,9 +21,7 @@
 
   outputs = { self, nixpkgs, flake-utils, tinycmmc, sdl_gamecontrollerdb, SDL-win32, SDL2-win32 }:
     tinycmmc.lib.eachSystemWithPkgs (pkgs:
-      let
-        pkgs_mingw32 = nixpkgs.legacyPackages.${pkgs.stdenv.hostPlatform.system}.pkgsCross.mingw32;
-      in {
+      {
         packages = rec {
           default = sdl-jstest;
 
