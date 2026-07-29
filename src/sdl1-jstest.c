@@ -163,9 +163,9 @@ static void interactive_menu(void)
       for (int i = 0; i < num_buttons; ++i) buttons[i] = SDL_JoystickGetButton(joy, i);
       for (int i = 0; i < num_hats; ++i) hats[i] = SDL_JoystickGetHat(joy, i);
 
-      TestUI ui;
-      test_ui_init(&ui);
-      test_ui_log(&ui, "Opened joystick %d '%s'", sel,
+      TestUI test_ui;
+      test_ui_init(&test_ui);
+      test_ui_log(&test_ui, "Opened joystick %d '%s'", sel,
                   SDL_JoystickName(sel) ? SDL_JoystickName(sel) : "?");
       int quit = 0;
       SDL_Event event;
@@ -179,7 +179,7 @@ static void interactive_menu(void)
             case SDL_JOYAXISMOTION:
               if (event.jaxis.axis < num_axes)
                 axes[event.jaxis.axis] = event.jaxis.value;
-              test_ui_log(&ui, "%s which=%d axis=%d value=%+d",
+              test_ui_log(&test_ui, "%s which=%d axis=%d value=%+d",
                           sdl_event_name(event.type),
                           event.jaxis.which, event.jaxis.axis, event.jaxis.value);
               break;
@@ -187,7 +187,7 @@ static void interactive_menu(void)
             case SDL_JOYBUTTONUP:
               if (event.jbutton.button < num_buttons)
                 buttons[event.jbutton.button] = event.jbutton.state;
-              test_ui_log(&ui, "%s which=%d button=%d %s",
+              test_ui_log(&test_ui, "%s which=%d button=%d %s",
                           sdl_event_name(event.type),
                           event.jbutton.which, event.jbutton.button,
                           event.jbutton.state ? "DOWN" : "UP");
@@ -195,7 +195,7 @@ static void interactive_menu(void)
             case SDL_JOYHATMOTION:
               if (event.jhat.hat < num_hats)
                 hats[event.jhat.hat] = event.jhat.value;
-              test_ui_log(&ui, "%s which=%d hat=%d value=0x%02x",
+              test_ui_log(&test_ui, "%s which=%d hat=%d value=0x%02x",
                           sdl_event_name(event.type),
                           event.jhat.which, event.jhat.hat, event.jhat.value);
               break;
@@ -210,19 +210,19 @@ static void interactive_menu(void)
               quit = 1;
               break;
             default:
-              test_ui_log(&ui, "%s", sdl_event_name(event.type));
+              test_ui_log(&test_ui, "%s", sdl_event_name(event.type));
               break;
           }
         }
-        test_ui_draw_joystick(&ui, SDL_JoystickName(sel), sel,
+        test_ui_draw_joystick(&test_ui, SDL_JoystickName(sel), sel,
                               axes, num_axes, buttons, num_buttons, NULL,
                               NULL, 0, hats, num_hats, balls, num_balls);
-        test_ui_refresh(&ui);
+        test_ui_refresh(&test_ui);
         {
-          TestUIAction act = test_ui_poll_action(&ui);
+          TestUIAction act = test_ui_poll_action(&test_ui);
           if (act == TEST_UI_QUIT)
           {
-            test_ui_shutdown(&ui);
+            test_ui_shutdown(&test_ui);
             free(balls); free(hats); free(buttons); free(axes);
             SDL_JoystickClose(joy);
             exit(EXIT_SUCCESS);
@@ -231,7 +231,7 @@ static void interactive_menu(void)
             quit = 1;
         }
       }
-      test_ui_shutdown(&ui);
+      test_ui_shutdown(&test_ui);
       free(balls); free(hats); free(buttons); free(axes);
       SDL_JoystickClose(joy);
     }
