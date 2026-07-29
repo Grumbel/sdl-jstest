@@ -112,7 +112,7 @@
             .
         '';
       in
-      {
+      rec {
         packages = {
           default = sdl-jstest;
 
@@ -122,25 +122,25 @@
           inherit sdl3-jstest;
         };
 
-        apps = {
-          default = {
-            type = "app";
-            program = "${sdl2-jstest}/bin/sdl2-jstest";
-          };
+        apps = rec {
+          default = sdl2-jstest;
 
           sdl1-jstest = {
             type = "app";
-            program = "${sdl1-jstest}/bin/sdl1-jstest";
+            program = "${packages.sdl1-jstest}/bin/sdl1-jstest";
+            meta.description = "SDL1 joystick testing utility";
           };
 
           sdl2-jstest = {
             type = "app";
-            program = "${sdl2-jstest}/bin/sdl2-jstest";
+            program = "${packages.sdl2-jstest}/bin/sdl2-jstest";
+            meta.description = "SDL2 joystick testing utility";
           };
         } // pkgs.lib.optionalAttrs (sdl3-jstest != null) {
           sdl3-jstest = {
             type = "app";
-            program = "${sdl3-jstest}/bin/sdl3-jstest";
+            program = "${packages.sdl3-jstest}/bin/sdl3-jstest";
+            meta.description = "SDL3 joystick testing utility";
           };
         };
 
