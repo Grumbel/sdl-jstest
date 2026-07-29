@@ -55,7 +55,7 @@ if (BUILD_SDL_JSTEST)
     PkgConfig::NCURSES
   )
 
-  file(COPY sdl-jstest.1
+  file(COPY doc/sdl-jstest.1
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sdl-jstest.1
@@ -65,7 +65,7 @@ if (BUILD_SDL_JSTEST)
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
   install(FILES
-    sdl-jstest.svg
+    data/sdl-jstest.svg
     DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
 endif ()
 
@@ -87,7 +87,7 @@ if (BUILD_SDL2_JSTEST)
   )
   target_compile_definitions(sdl2-jstest PUBLIC SDL2_JSTEST_DATADIR=\"${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}\")
 
-  file(COPY sdl2-jstest.1
+  file(COPY doc/sdl2-jstest.1
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
   file(COPY external/sdl_gamecontrollerdb/gamecontrollerdb.txt
@@ -103,7 +103,7 @@ if (BUILD_SDL2_JSTEST)
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
   install(FILES
-    sdl2-jstest.svg
+    data/sdl2-jstest.svg
     DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
 endif ()
 
@@ -117,7 +117,7 @@ if (BUILD_SDL3_JSTEST)
   )
   target_compile_definitions(sdl3-jstest PUBLIC SDL3_JSTEST_DATADIR=\"${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}\")
 
-  file(COPY sdl3-jstest.1
+  file(COPY doc/sdl3-jstest.1
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
   file(COPY external/sdl_gamecontrollerdb/gamecontrollerdb.txt
@@ -133,7 +133,7 @@ if (BUILD_SDL3_JSTEST)
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
   install(FILES
-    sdl3-jstest.svg
+    data/sdl3-jstest.svg
     DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
 endif ()
 

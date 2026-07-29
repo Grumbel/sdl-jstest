@@ -14,6 +14,8 @@ Key paths:
 | `src/sdl2-jstest.c` | SDL 2 joystick / GameController tester |
 | `src/sdl3-jstest.c` | SDL 3 joystick / Gamepad tester |
 | `src/utils/dualsense.h` | DualSense (PS5) trigger-effect helpers |
+| `doc/` | Man pages and screenshots |
+| `data/` | Application icons (SVG) |
 | `CMakeLists.txt` | Build and install rules |
 | `external/sdl_gamecontrollerdb/` | Submodule: GameControllerDB mappings |
 | `sdl-jstest.nix` / `flake.nix` | Nix packaging |
@@ -27,7 +29,7 @@ License: GPL-3.0-or-later. Version is read from `VERSION`.
 - Preserve GPL-3.0 headers and copyright notices on modified files.
 - When touching build or packaging, keep both CMake and Nix paths working if possible.
 - Submodule `external/sdl_gamecontrollerdb` must remain a proper git submodule (do not vendor its contents into this tree unless explicitly requested).
-- Man pages (`.1`), SVG icons, and screenshots are part of the project; update them when CLI behavior or branding changes.
+- Man pages and screenshots live under `doc/`; SVG icons under `data/`. Update them when CLI behavior or branding changes.
 
 ## Build reminders
 

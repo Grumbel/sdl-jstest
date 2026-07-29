@@ -13,7 +13,7 @@ configuration.
 Screenshots
 -----------
 
-![sdl-jstest 0.2.1](screenshots/screenshot-0.2.1-2.png)
+![sdl-jstest 0.2.1](doc/screenshots/screenshot-0.2.1-2.png)
 
 
 Requirements
