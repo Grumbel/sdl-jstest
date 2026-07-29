@@ -57,7 +57,7 @@ stdenv.mkDerivation {
     # Nix behaves differently on a dirty git repository than on a clean one,
     # so we have to check.
     if [ -d external/sdl_gamecontrollerdb ]; then
-      rmdir external/sdl_gamecontrollerdb
+      rm -rv external/sdl_gamecontrollerdb
     fi
     mkdir -p external/
     ln -s "${sdl_gamecontrollerdb}" external/sdl_gamecontrollerdb
