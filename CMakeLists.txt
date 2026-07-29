@@ -9,7 +9,7 @@ project(sdl-jstest)
 
 option(WARNINGS "Switch on extra warnings" OFF)
 option(WERROR "Turn warnings into errors" OFF)
-option(BUILD_SDL_JSTEST "Build sdl-jstest" ON)
+option(BUILD_SDL_JSTEST "Build sdl1-jstest" ON)
 option(BUILD_SDL2_JSTEST "Build sdl2-jstest" ON)
 option(BUILD_SDL3_JSTEST "Build sdl3-jstest" ON)
 
@@ -39,23 +39,23 @@ endif ()
 if (BUILD_SDL_JSTEST)
   find_package(SDL REQUIRED)
 
-  add_executable(sdl-jstest src/sdl-jstest.c)
-  target_link_libraries(sdl-jstest
+  add_executable(sdl1-jstest src/sdl1-jstest.c)
+  target_link_libraries(sdl1-jstest
     SDL::SDL
     PkgConfig::NCURSES
   )
 
-  file(COPY doc/sdl-jstest.1
+  file(COPY doc/sdl1-jstest.1
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sdl-jstest.1
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sdl1-jstest.1
     DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 
-  install(TARGETS sdl-jstest
+  install(TARGETS sdl1-jstest
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
   install(FILES
-    data/sdl-jstest.svg
+    data/sdl1-jstest.svg
     DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
 endif ()
 

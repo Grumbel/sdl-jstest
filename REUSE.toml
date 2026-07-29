@@ -26,7 +26,7 @@ SPDX-FileCopyrightText = "2023 Ingo Ruhnke <grumbel@gmail.com>"
 SPDX-License-Identifier = "GPL-3.0-or-later"
 
 [[annotations]]
-path = ["doc/sdl-jstest.1"]
+path = ["doc/sdl1-jstest.1"]
 SPDX-FileCopyrightText = """
 2011-2026 Ingo Ruhnke <grumbel@gmail.com>
 2018 Anthony J. Bentley <anthony@anjbe.name>

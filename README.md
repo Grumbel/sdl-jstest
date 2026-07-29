@@ -1,11 +1,11 @@
 sdl-jstest
 ==========
 
-`sdl-jstest`, `sdl2-jstest`, and `sdl3-jstest` are simple programs that lets you find
+`sdl1-jstest`, `sdl2-jstest`, and `sdl3-jstest` are simple programs that lets you find
 out how many joysticks SDL, SDL2, or SDL3 detected on your system, how many
 axes, buttons, hats and balls they have each. They also lets you test
 the joysticks by displaying the events they send or by displaying
-their current button, axis, hat or ball state. sdl-jstest is
+their current button, axis, hat or ball state. sdl1-jstest is
 especially useful if you want to test your `SDL_LINUX_JOYSTICK`
 configuration.
 

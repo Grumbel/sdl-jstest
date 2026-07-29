@@ -130,7 +130,7 @@
 
           sdl1-jstest = {
             type = "app";
-            program = "${sdl1-jstest}/bin/sdl-jstest";
+            program = "${sdl1-jstest}/bin/sdl1-jstest";
           };
 
           sdl2-jstest = {
