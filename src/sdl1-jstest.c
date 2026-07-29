@@ -214,14 +214,10 @@ int main(int argc, char** argv)
 
         int quit = 0;
         SDL_Event event;
-        int force_draw = 1;
         while(!quit)
         {
           SDL_Delay(10);
-          int redraw = force_draw;
-          force_draw = 0;
           while (SDL_PollEvent(&event)) {
-            redraw = 1;
             switch(event.type)
             {
               case SDL_JOYAXISMOTION:
@@ -263,7 +259,7 @@ int main(int argc, char** argv)
             }
           }
 
-          if (redraw || ui.dirty)
+          if (1) /* always paint; avoids blank screen until first event */
           {
             test_ui_draw_joystick(&ui, SDL_JoystickName(joy_idx), joy_idx,
                                   axes, num_axes, buttons, num_buttons, NULL,

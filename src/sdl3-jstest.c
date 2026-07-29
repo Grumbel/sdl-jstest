@@ -286,16 +286,11 @@ static void test_joystick(int joy_idx)
 
     int quit = 0;
     SDL_Event event;
-    bool force_draw = true;
     while (!quit)
     {
         SDL_Delay(10);
-        bool redraw = force_draw;
-        force_draw = false;
-
         while (SDL_PollEvent(&event))
         {
-            redraw = true;
             switch (event.type)
             {
             case SDL_EVENT_JOYSTICK_AXIS_MOTION:
@@ -370,7 +365,7 @@ static void test_joystick(int joy_idx)
             }
         }
 
-        if (redraw || ui.dirty)
+        if (1) /* always paint; avoids blank screen until first event */
         {
             test_ui_draw_joystick(&ui, SDL_GetJoystickName(joy), joy_idx,
                                   axes, num_axes, buttons, num_buttons, NULL,
@@ -438,15 +433,11 @@ static void test_gamecontroller_state(SDL_Gamepad* gamepad)
 
     int quit = 0;
     SDL_Event event;
-    bool force_draw = true;
     while (!quit)
     {
         SDL_Delay(10);
-        bool redraw = force_draw;
-        force_draw = false;
         while (SDL_PollEvent(&event))
         {
-            redraw = true;
             switch (event.type)
             {
             case SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
@@ -539,7 +530,7 @@ static void test_gamecontroller_state(SDL_Gamepad* gamepad)
             }
         }
 
-        if (redraw || ui.dirty)
+        if (1) /* always paint; avoids blank screen until first event */
         {
             {
                 TestUIButtonGroup pad_groups[] = {

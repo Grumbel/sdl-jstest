@@ -58,6 +58,9 @@ void test_ui_init(TestUI* ui)
     nodelay(stdscr, TRUE);
     curs_set(0);
     keypad(stdscr, TRUE);
+    /* Clear stdscr once so newwin panes are not left under a stale screen. */
+    clear();
+    refresh();
     if (has_colors())
     {
         start_color();
@@ -70,6 +73,9 @@ void test_ui_init(TestUI* ui)
     }
     test_ui_relayout(ui);
     test_ui_log(ui, "Event log ready — device activity appears here.");
+    /* Paint the empty event pane immediately (status filled by caller). */
+    test_ui_draw_events(ui);
+    doupdate();
 }
 
 void test_ui_shutdown(TestUI* ui)
@@ -392,6 +398,8 @@ bool test_ui_check_quit(TestUI* ui)
 
 void test_ui_refresh(TestUI* ui)
 {
+    if (ui->status_win)
+        wnoutrefresh(as_win(ui->status_win));
     test_ui_draw_events(ui);
     doupdate();
     ui->dirty = false;
