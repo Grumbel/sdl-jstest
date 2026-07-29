@@ -143,6 +143,28 @@
             program = "${sdl3-jstest}/bin/sdl3-jstest";
           };
         };
+
+        checks =
+          {
+            # Build every native package under `nix flake check`
+            inherit sdl-jstest sdl1-jstest sdl2-jstest sdl3-jstest;
+
+            reuse-lint = pkgs.stdenvNoCC.mkDerivation {
+              name = "sdl-jstest-reuse-lint";
+              src = self;
+              dontConfigure = true;
+              dontBuild = true;
+              doCheck = true;
+              nativeBuildInputs = [ pkgs.reuse ];
+              checkPhase = ''
+                reuse lint
+              '';
+              installPhase = ''
+                mkdir -p "$out"
+                echo "reuse lint passed" > "$out/result"
+              '';
+            };
+          };
       }
     );
 }

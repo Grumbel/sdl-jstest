@@ -2,12 +2,12 @@ version = 1
 
 [[annotations]]
 path = ["README.md"]
-SPDX-FileCopyrightText = """
-2014 Mark Johnson <mark@barrenfrozenwasteland.com>
-2015-2026 Ingo Ruhnke <grumbel@gmail.com>
-2017 Jaime Moreira <jmoreirag@gmail.com>
-2020 Stuart Axon <stuaxo2@yahoo.com>
-"""
+SPDX-FileCopyrightText = [
+  "2014 Mark Johnson <mark@barrenfrozenwasteland.com>",
+  "2015-2026 Ingo Ruhnke <grumbel@gmail.com>",
+  "2017 Jaime Moreira <jmoreirag@gmail.com>",
+  "2020 Stuart Axon <stuaxo2@yahoo.com>",
+]
 SPDX-License-Identifier = "GPL-3.0-or-later"
 
 [[annotations]]
@@ -27,18 +27,18 @@ SPDX-License-Identifier = "GPL-3.0-or-later"
 
 [[annotations]]
 path = ["doc/sdl1-jstest.1"]
-SPDX-FileCopyrightText = """
-2011-2026 Ingo Ruhnke <grumbel@gmail.com>
-2018 Anthony J. Bentley <anthony@anjbe.name>
-"""
+SPDX-FileCopyrightText = [
+  "2011-2026 Ingo Ruhnke <grumbel@gmail.com>",
+  "2018 Anthony J. Bentley <anthony@anjbe.name>",
+]
 SPDX-License-Identifier = "GPL-3.0-or-later"
 
 [[annotations]]
 path = ["doc/sdl2-jstest.1"]
-SPDX-FileCopyrightText = """
-2014-2026 Ingo Ruhnke <grumbel@gmail.com>
-2018 Anthony J. Bentley <anthony@anjbe.name>
-"""
+SPDX-FileCopyrightText = [
+  "2014-2026 Ingo Ruhnke <grumbel@gmail.com>",
+  "2018 Anthony J. Bentley <anthony@anjbe.name>",
+]
 SPDX-License-Identifier = "GPL-3.0-or-later"
 
 [[annotations]]
@@ -48,12 +48,12 @@ SPDX-License-Identifier = "GPL-3.0-or-later"
 
 [[annotations]]
 path = [
-    "flake.nix",
-    "flake.lock",
-    "sdl-jstest.nix",
-    "VERSION",
-    ".gitignore",
-    ".gitmodules",
+  "flake.nix",
+  "flake.lock",
+  "sdl-jstest.nix",
+  "VERSION",
+  ".gitignore",
+  ".gitmodules",
 ]
 SPDX-FileCopyrightText = "2015-2026 Ingo Ruhnke <grumbel@gmail.com>"
 SPDX-License-Identifier = "GPL-3.0-or-later"
