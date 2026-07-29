@@ -332,7 +332,7 @@ void test_ui_draw_joystick(TestUI* ui,
     }
 
     if (rows > 1)
-        mvwprintw(w, rows - 1, x, "Ctrl-C / Esc to quit");
+        mvwprintw(w, rows - 1, x, "Esc: back to menu  ·  Ctrl-C: exit");
 done:
     wnoutrefresh(w);
 }
@@ -382,18 +382,140 @@ void test_ui_draw_events(TestUI* ui)
     wnoutrefresh(w);
 }
 
-bool test_ui_check_quit(TestUI* ui)
+TestUIAction test_ui_poll_action(TestUI* ui)
 {
-    bool quit = false;
+    TestUIAction action = TEST_UI_CONTINUE;
     int ch;
     while ((ch = getch()) != ERR)
     {
-        if (ch == 3 || ch == 27)
-            quit = true;
+        if (ch == 3) /* Ctrl-C */
+            action = TEST_UI_QUIT;
+        else if (ch == 27) /* Esc */
+            action = TEST_UI_BACK;
         else if (ch == KEY_RESIZE)
             test_ui_relayout(ui);
     }
-    return quit;
+    return action;
+}
+
+int test_ui_menu_select(TestUI* ui, const char* title,
+                        const char* const* items, int n_items)
+{
+    int selected = 0;
+    if (n_items < 0)
+        n_items = 0;
+
+    for (;;)
+    {
+        WINDOW* w = as_win(ui->status_win);
+        WINDOW* ew = as_win(ui->events_win);
+        if (!w)
+            return -1;
+
+        int rows, cols;
+        getmaxyx(w, rows, cols);
+        (void)cols;
+        werase(w);
+        box(w, 0, 0);
+
+        int y = 1;
+        int x = 2;
+        wattron(w, COLOR_PAIR(1) | A_BOLD);
+        mvwprintw(w, y++, x, "%s", title ? title : "Select device");
+        wattroff(w, COLOR_PAIR(1) | A_BOLD);
+        mvwprintw(w, y++, x, "↑/↓ or j/k  ·  Enter select  ·  Esc quit");
+        y++;
+
+        if (n_items == 0)
+        {
+            mvwprintw(w, y++, x, "(no devices detected — plug one in and wait)");
+        }
+        else
+        {
+            int list_top = y;
+            int visible = rows - list_top - 2;
+            if (visible < 1)
+                visible = 1;
+            int start = 0;
+            if (selected >= start + visible)
+                start = selected - visible + 1;
+            if (selected < start)
+                start = selected;
+
+            for (int i = 0; i < visible && start + i < n_items; ++i)
+            {
+                int idx = start + i;
+                int row = list_top + i;
+                if (idx == selected)
+                    wattron(w, COLOR_PAIR(4) | A_BOLD);
+                mvwprintw(w, row, x, "%s %2d  %s",
+                          idx == selected ? "▶" : " ",
+                          idx,
+                          items[idx] ? items[idx] : "?");
+                if (idx == selected)
+                    wattroff(w, COLOR_PAIR(4) | A_BOLD);
+            }
+        }
+
+        if (rows > 1)
+            mvwprintw(w, rows - 1, x, "sdl-jstest");
+
+        wnoutrefresh(w);
+        if (ew)
+        {
+            werase(ew);
+            box(ew, 0, 0);
+            wattron(ew, COLOR_PAIR(4));
+            mvwprintw(ew, 0, 2, " Events ");
+            wattroff(ew, COLOR_PAIR(4));
+            mvwprintw(ew, 1, 2, "Waiting for a selection…");
+            wnoutrefresh(ew);
+        }
+        doupdate();
+
+        /* Blocking-ish: wait briefly for a key */
+        timeout(100);
+        int ch = getch();
+        timeout(0); /* restore nodelay */
+        nodelay(stdscr, TRUE);
+
+        if (ch == ERR)
+            continue;
+        if (ch == KEY_RESIZE)
+        {
+            test_ui_relayout(ui);
+            continue;
+        }
+        if (ch == 3) /* Ctrl-C */
+            return -1;
+        if (ch == 27) /* Esc */
+            return -1;
+        if (ch == KEY_UP || ch == 'k' || ch == 'K')
+        {
+            if (n_items > 0)
+                selected = (selected + n_items - 1) % n_items;
+            continue;
+        }
+        if (ch == KEY_DOWN || ch == 'j' || ch == 'J')
+        {
+            if (n_items > 0)
+                selected = (selected + 1) % n_items;
+            continue;
+        }
+        if (ch == '\n' || ch == KEY_ENTER || ch == ' ')
+        {
+            if (n_items > 0)
+                return selected;
+            continue;
+        }
+        /* digit jump */
+        if (ch >= '0' && ch <= '9' && n_items > 0)
+        {
+            int d = ch - '0';
+            if (d < n_items)
+                selected = d;
+        }
+    }
 }
 
 void test_ui_refresh(TestUI* ui)

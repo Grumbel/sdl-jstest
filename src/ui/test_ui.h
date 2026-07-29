@@ -14,21 +14,27 @@ extern "C" {
 #define TEST_UI_LOG_LEN  160
 
 typedef struct TestUI {
-    void* status_win; /* WINDOW* */
-    void* events_win; /* WINDOW* */
+    void* status_win;
+    void* events_win;
     int status_h;
     int events_h;
     char log[TEST_UI_LOG_CAP][TEST_UI_LOG_LEN];
-    int log_len;   /* number of valid entries (max TEST_UI_LOG_CAP) */
-    int log_head;  /* next write index */
+    int log_len;
+    int log_head;
     bool dirty;
 } TestUI;
 
-/** Inclusive start / exclusive end button index range for a visual group. */
 typedef struct TestUIButtonGroup {
     int begin;
     int end;
 } TestUIButtonGroup;
+
+/** Result of polling keyboard while a screen is active. */
+typedef enum TestUIAction {
+    TEST_UI_CONTINUE = 0,
+    TEST_UI_BACK,   /* Esc: leave current screen (to menu or exit menu) */
+    TEST_UI_QUIT    /* Ctrl-C: leave the whole program */
+} TestUIAction;
 
 void test_ui_init(TestUI* ui);
 void test_ui_shutdown(TestUI* ui);
@@ -40,11 +46,6 @@ void test_ui_log(TestUI* ui, const char* fmt, ...)
 #endif
     ;
 
-/**
- * Draw the top status pane: identity, axes, buttons, hats, balls.
- * @param button_labels optional per-button names (may be NULL)
- * @param button_groups optional layout groups; when NULL all buttons flow-wrap
- */
 void test_ui_draw_joystick(TestUI* ui,
                            const char* name,
                            int joy_idx,
@@ -57,7 +58,18 @@ void test_ui_draw_joystick(TestUI* ui,
 
 void test_ui_draw_events(TestUI* ui);
 void test_ui_refresh(TestUI* ui);
-bool test_ui_check_quit(TestUI* ui);
+
+/** Drain input; returns BACK (Esc), QUIT (Ctrl-C), or CONTINUE. */
+TestUIAction test_ui_poll_action(TestUI* ui);
+
+/**
+ * Interactive device picker. Arrow keys / j/k move, Enter selects, Esc cancels.
+ * @param items device labels
+ * @param n_items count
+ * @return selected index, or -1 if cancelled (Esc / quit)
+ */
+int test_ui_menu_select(TestUI* ui, const char* title,
+                        const char* const* items, int n_items);
 
 #ifdef __cplusplus
 }

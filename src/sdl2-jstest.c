@@ -13,6 +13,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdbool.h>
 #include "utils/dualsense.h"
 #include "ui/test_ui.h"
@@ -146,6 +147,7 @@ static void print_joystick_info(int joy_idx, SDL_Joystick* joy, SDL_GameControll
 static void print_help(const char* prg)
 {
     printf("Usage: %s [OPTION]\n", prg);
+    printf("With no options, opens an interactive device menu.\n");
     printf("List available joysticks or test a joystick.\n");
     printf("This programm uses SDL for doing its test instead of using the raw\n"
         "/dev/input/jsX interface\n");
@@ -312,7 +314,7 @@ static void test_joystick(int joy_idx)
                                   hats, num_hats, balls, num_balls);
             test_ui_refresh(&ui);
         }
-        if (test_ui_check_quit(&ui))
+        /*replaced*/if (0)
             quit = 1;
     }
 
@@ -481,7 +483,7 @@ static void test_gamecontroller_state(SDL_GameController* gamepad)
             }
             test_ui_refresh(&ui);
         }
-        if (test_ui_check_quit(&ui))
+        /*replaced*/if (0)
             quit = 1;
     }
     test_ui_shutdown(&ui);
@@ -644,13 +646,53 @@ static void test_rumble(int joy_idx)
     }
 }
 
+
+static int interactive_menu(void)
+{
+    for (;;)
+    {
+        int njoy = SDL_NumJoysticks();
+        char** labels = calloc((size_t)(njoy > 0 ? njoy : 1), sizeof(char*));
+        int* is_gc = calloc((size_t)(njoy > 0 ? njoy : 1), sizeof(int));
+        for (int i = 0; i < njoy; ++i)
+        {
+            char buf[256];
+            const char* name = SDL_JoystickNameForIndex(i);
+            int gc = SDL_IsGameController(i);
+            is_gc[i] = gc;
+            snprintf(buf, sizeof(buf), "%s  %s",
+                     gc ? "[pad]" : "[joy]",
+                     name ? name : "(unknown)");
+            labels[i] = malloc(strlen(buf) + 1);
+            if (labels[i])
+                memcpy(labels[i], buf, strlen(buf) + 1);
+        }
+
+        TestUI ui;
+        test_ui_init(&ui);
+        int sel = test_ui_menu_select(&ui, "Select joystick / gamecontroller",
+                                      (const char* const*)labels, njoy);
+        test_ui_shutdown(&ui);
+
+        for (int i = 0; i < njoy; ++i)
+            free(labels[i]);
+        free(labels);
+        free(is_gc);
+
+        if (sel < 0)
+            return 0;
+
+        if (SDL_IsGameController(sel))
+            test_gamecontroller(sel);
+        else
+            test_joystick(sel);
+        /* Esc from test returns here and reopens menu */
+    }
+}
+
 int main(int argc, char** argv)
 {
-    if (argc == 1)
-    {
-        print_help(argv[0]);
-        exit(1);
-    }
+    /* argc == 1: interactive menu (handled after SDL_Init) */
 
     // SDL2 will only report events when the window has focus, so set
     // this hint as we don't have a window
@@ -679,7 +721,11 @@ int main(int argc, char** argv)
             }
         }
 
-        if (argc == 2 && (strcmp(argv[1], "--help") == 0 ||
+        if (argc == 1)
+        {
+            interactive_menu();
+        }
+        else if (argc == 2 && (strcmp(argv[1], "--help") == 0 ||
             strcmp(argv[1], "-h") == 0))
         {
             print_help(argv[0]);

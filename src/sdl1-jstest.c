@@ -10,6 +10,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <SDL.h>
 
@@ -89,6 +90,7 @@ static void print_joystick_info(int joy_idx, SDL_Joystick* joy)
 static void print_help(const char* prg)
 {
   printf("Usage: %s [OPTION]\n", prg);
+  printf("With no options, opens an interactive device menu.\n");
   printf("List available joysticks or test a joystick.\n");
   printf("This programm uses SDL for doing its test instead of using the raw\n"
          "/dev/input/jsX interface\n");
@@ -105,6 +107,138 @@ static void print_help(const char* prg)
   printf("  %s --test 1\n", prg);
 }
 
+
+static void interactive_menu(void)
+{
+  for (;;)
+  {
+    int njoy = SDL_NumJoysticks();
+    char** labels = calloc((size_t)(njoy > 0 ? njoy : 1), sizeof(char*));
+    for (int i = 0; i < njoy; ++i)
+    {
+      char buf[256];
+      const char* name = SDL_JoystickName(i);
+      snprintf(buf, sizeof(buf), "[joy]  %s", name ? name : "(unknown)");
+      labels[i] = malloc(strlen(buf) + 1);
+      if (labels[i])
+        memcpy(labels[i], buf, strlen(buf) + 1);
+    }
+
+    TestUI ui;
+    test_ui_init(&ui);
+    int sel = test_ui_menu_select(&ui, "Select joystick",
+                                  (const char* const*)labels, njoy);
+    test_ui_shutdown(&ui);
+
+    for (int i = 0; i < njoy; ++i)
+      free(labels[i]);
+    free(labels);
+
+    if (sel < 0)
+      return;
+
+    /* Open and run test for selected index (inline path via --test logic) */
+    {
+      char idxbuf[16];
+      snprintf(idxbuf, sizeof(idxbuf), "%d", sel);
+      /* Re-enter by calling the same open logic: spawn test by setting up args-like call */
+    }
+    /* Direct test body: use existing --test path via function extraction - call joystick open loop */
+    {
+      SDL_Joystick* joy = SDL_JoystickOpen(sel);
+      if (!joy)
+      {
+        fprintf(stderr, "Unable to open joystick %d\n", sel);
+        continue;
+      }
+      int num_axes = SDL_JoystickNumAxes(joy);
+      int num_buttons = SDL_JoystickNumButtons(joy);
+      int num_hats = SDL_JoystickNumHats(joy);
+      int num_balls = SDL_JoystickNumBalls(joy);
+      Sint16* axes = calloc((size_t)num_axes, sizeof(Sint16));
+      Uint8* buttons = calloc((size_t)num_buttons, sizeof(Uint8));
+      Uint8* hats = calloc((size_t)num_hats, sizeof(Uint8));
+      Sint16* balls = calloc((size_t)num_balls, 2 * sizeof(Sint16));
+      for (int i = 0; i < num_axes; ++i) axes[i] = SDL_JoystickGetAxis(joy, i);
+      for (int i = 0; i < num_buttons; ++i) buttons[i] = SDL_JoystickGetButton(joy, i);
+      for (int i = 0; i < num_hats; ++i) hats[i] = SDL_JoystickGetHat(joy, i);
+
+      TestUI ui;
+      test_ui_init(&ui);
+      test_ui_log(&ui, "Opened joystick %d '%s'", sel,
+                  SDL_JoystickName(sel) ? SDL_JoystickName(sel) : "?");
+      int quit = 0;
+      SDL_Event event;
+      while (!quit)
+      {
+        SDL_Delay(10);
+        while (SDL_PollEvent(&event))
+        {
+          switch (event.type)
+          {
+            case SDL_JOYAXISMOTION:
+              if (event.jaxis.axis < num_axes)
+                axes[event.jaxis.axis] = event.jaxis.value;
+              test_ui_log(&ui, "%s which=%d axis=%d value=%+d",
+                          sdl_event_name(event.type),
+                          event.jaxis.which, event.jaxis.axis, event.jaxis.value);
+              break;
+            case SDL_JOYBUTTONDOWN:
+            case SDL_JOYBUTTONUP:
+              if (event.jbutton.button < num_buttons)
+                buttons[event.jbutton.button] = event.jbutton.state;
+              test_ui_log(&ui, "%s which=%d button=%d %s",
+                          sdl_event_name(event.type),
+                          event.jbutton.which, event.jbutton.button,
+                          event.jbutton.state ? "DOWN" : "UP");
+              break;
+            case SDL_JOYHATMOTION:
+              if (event.jhat.hat < num_hats)
+                hats[event.jhat.hat] = event.jhat.value;
+              test_ui_log(&ui, "%s which=%d hat=%d value=0x%02x",
+                          sdl_event_name(event.type),
+                          event.jhat.which, event.jhat.hat, event.jhat.value);
+              break;
+            case SDL_JOYBALLMOTION:
+              if (event.jball.ball < num_balls)
+              {
+                balls[2 * event.jball.ball] = event.jball.xrel;
+                balls[2 * event.jball.ball + 1] = event.jball.yrel;
+              }
+              break;
+            case SDL_QUIT:
+              quit = 1;
+              break;
+            default:
+              test_ui_log(&ui, "%s", sdl_event_name(event.type));
+              break;
+          }
+        }
+        test_ui_draw_joystick(&ui, SDL_JoystickName(sel), sel,
+                              axes, num_axes, buttons, num_buttons, NULL,
+                              NULL, 0, hats, num_hats, balls, num_balls);
+        test_ui_refresh(&ui);
+        {
+          TestUIAction act = test_ui_poll_action(&ui);
+          if (act == TEST_UI_QUIT)
+          {
+            test_ui_shutdown(&ui);
+            free(balls); free(hats); free(buttons); free(axes);
+            SDL_JoystickClose(joy);
+            exit(EXIT_SUCCESS);
+          }
+          if (act == TEST_UI_BACK)
+            quit = 1;
+        }
+      }
+      test_ui_shutdown(&ui);
+      free(balls); free(hats); free(buttons); free(axes);
+      SDL_JoystickClose(joy);
+    }
+  }
+}
+
+
 int main(int argc, char** argv)
 {
 #ifdef _WIN32
@@ -116,11 +250,7 @@ int main(int argc, char** argv)
   freopen_s(&fp, "CONOUT$", "w", stderr);
 #endif
 
-  if (argc == 1)
-  {
-    print_help(argv[0]);
-    exit(1);
-  }
+  /* menu when no args */
 
   // FIXME: We don't need video, but without it SDL will fail to work in SDL_WaitEvent()
   if(SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0)
@@ -132,7 +262,11 @@ int main(int argc, char** argv)
   {
     atexit(SDL_Quit);
 
-    if (argc == 2 && (strcmp(argv[1], "--help") == 0 ||
+    if (argc == 1)
+  {
+    interactive_menu();
+  }
+  else if (argc == 2 && (strcmp(argv[1], "--help") == 0 ||
                       strcmp(argv[1], "-h") == 0))
     {
       print_help(argv[0]);
@@ -267,8 +401,16 @@ int main(int argc, char** argv)
                                   hats, num_hats, balls, num_balls);
             test_ui_refresh(&ui);
           }
-          if (test_ui_check_quit(&ui))
-            quit = 1;
+          {
+            TestUIAction act = test_ui_poll_action(&ui);
+            if (act == TEST_UI_QUIT)
+            {
+              test_ui_shutdown(&ui);
+              exit(EXIT_SUCCESS);
+            }
+            if (act == TEST_UI_BACK)
+              quit = 1;
+          }
         }
 
         test_ui_shutdown(&ui);
