@@ -200,6 +200,13 @@ int main(int argc, char** argv)
         Uint8*  hats    = calloc((size_t)num_hats,    sizeof(Uint8));
         Sint16* balls   = calloc((size_t)num_balls,   2*sizeof(Sint16));
 
+        for (int i = 0; i < num_axes; ++i)
+          axes[i] = SDL_JoystickGetAxis(joy, i);
+        for (int i = 0; i < num_buttons; ++i)
+          buttons[i] = SDL_JoystickGetButton(joy, i);
+        for (int i = 0; i < num_hats; ++i)
+          hats[i] = SDL_JoystickGetHat(joy, i);
+
         TestUI ui;
         test_ui_init(&ui);
         test_ui_log(&ui, "Opened joystick %d '%s'", joy_idx,
@@ -207,10 +214,12 @@ int main(int argc, char** argv)
 
         int quit = 0;
         SDL_Event event;
+        int force_draw = 1;
         while(!quit)
         {
           SDL_Delay(10);
-          int redraw = 0;
+          int redraw = force_draw;
+          force_draw = 0;
           while (SDL_PollEvent(&event)) {
             redraw = 1;
             switch(event.type)
@@ -218,7 +227,8 @@ int main(int argc, char** argv)
               case SDL_JOYAXISMOTION:
                 if (event.jaxis.axis < num_axes)
                   axes[event.jaxis.axis] = event.jaxis.value;
-                test_ui_log(&ui, "AXIS  joy=%d axis=%d value=%+d",
+                test_ui_log(&ui, "%s which=%d axis=%d value=%+d",
+                            sdl_event_name(event.type),
                             event.jaxis.which, event.jaxis.axis, event.jaxis.value);
                 break;
               case SDL_JOYBUTTONDOWN:

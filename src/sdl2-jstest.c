@@ -221,16 +221,26 @@ static void test_joystick(int joy_idx)
     Sint16* balls = calloc((size_t)num_balls, 2 * sizeof(Sint16));
 
     TestUI ui;
+    /* Seed current axis/button/hat state for the first paint */
+    for (int i = 0; i < num_axes; ++i)
+        axes[i] = SDL_JoystickGetAxis(joy, i);
+    for (int i = 0; i < num_buttons; ++i)
+        buttons[i] = SDL_JoystickGetButton(joy, i);
+    for (int i = 0; i < num_hats; ++i)
+        hats[i] = SDL_JoystickGetHat(joy, i);
+
     test_ui_init(&ui);
     test_ui_log(&ui, "Opened joystick %d '%s'", joy_idx,
                 SDL_JoystickName(joy) ? SDL_JoystickName(joy) : "?");
 
     int quit = 0;
     SDL_Event event;
+    bool force_draw = true;
     while (!quit)
     {
         SDL_Delay(10);
-        bool redraw = false;
+        bool redraw = force_draw;
+        force_draw = false;
         while (SDL_PollEvent(&event))
         {
             redraw = true;
@@ -239,21 +249,24 @@ static void test_joystick(int joy_idx)
             case SDL_JOYAXISMOTION:
                 if (event.jaxis.axis < num_axes)
                     axes[event.jaxis.axis] = event.jaxis.value;
-                test_ui_log(&ui, "AXIS  joy=%d axis=%d value=%+d",
+                test_ui_log(&ui, "%s which=%d axis=%d value=%+d",
+                            sdl_event_name(event.type),
                             event.jaxis.which, event.jaxis.axis, event.jaxis.value);
                 break;
             case SDL_JOYBUTTONDOWN:
             case SDL_JOYBUTTONUP:
                 if (event.jbutton.button < num_buttons)
                     buttons[event.jbutton.button] = event.jbutton.state;
-                test_ui_log(&ui, "BUTTON joy=%d btn=%d %s",
+                test_ui_log(&ui, "%s which=%d button=%d %s",
+                            sdl_event_name(event.type),
                             event.jbutton.which, event.jbutton.button,
                             event.jbutton.state ? "DOWN" : "UP");
                 break;
             case SDL_JOYHATMOTION:
                 if (event.jhat.hat < num_hats)
                     hats[event.jhat.hat] = event.jhat.value;
-                test_ui_log(&ui, "HAT    joy=%d hat=%d value=%d",
+                test_ui_log(&ui, "%s which=%d hat=%d value=0x%02x",
+                            sdl_event_name(event.type),
                             event.jhat.which, event.jhat.hat, event.jhat.value);
                 break;
             case SDL_JOYBALLMOTION:
@@ -262,7 +275,8 @@ static void test_joystick(int joy_idx)
                     balls[2 * event.jball.ball] = event.jball.xrel;
                     balls[2 * event.jball.ball + 1] = event.jball.yrel;
                 }
-                test_ui_log(&ui, "BALL   joy=%d ball=%d dx=%d dy=%d",
+                test_ui_log(&ui, "%s which=%d ball=%d dx=%d dy=%d",
+                            sdl_event_name(event.type),
                             event.jball.which, event.jball.ball,
                             event.jball.xrel, event.jball.yrel);
                 break;
@@ -350,34 +364,51 @@ static void test_gamecontroller_state(SDL_GameController* gamepad)
     if (has_accel)
         SDL_GameControllerSetSensorEnabled(gamepad, SDL_SENSOR_ACCEL, SDL_TRUE);
 
+    /* Seed current state so the first frame is meaningful */
+    for (int i = 0; i < num_axes; ++i)
+        axes[i] = SDL_GameControllerGetAxis(gamepad, i);
+    for (int i = 0; i < num_buttons; ++i)
+        buttons[i] = SDL_GameControllerGetButton(gamepad, i) ? 1 : 0;
+
     TestUI ui;
     test_ui_init(&ui);
     test_ui_log(&ui, "GameController '%s'", SDL_GameControllerName(gamepad));
 
     int quit = 0;
     SDL_Event event;
+    bool force_draw = true;
     while (!quit)
     {
         SDL_Delay(10);
-        bool redraw = false;
+        bool redraw = force_draw;
+        force_draw = false;
         while (SDL_PollEvent(&event))
         {
             redraw = true;
             switch (event.type)
             {
             case SDL_CONTROLLERSENSORUPDATE:
-                test_ui_log(&ui, "SENSOR type=%d", event.csensor.sensor);
+                test_ui_log(&ui, "%s sensor=%d data=[%.3f %.3f %.3f]",
+                            sdl_event_name(event.type), event.csensor.sensor,
+                            event.csensor.data[0], event.csensor.data[1], event.csensor.data[2]);
                 break;
             case SDL_CONTROLLERAXISMOTION:
                 if (event.caxis.axis < num_axes)
                     axes[event.caxis.axis] = event.caxis.value;
+                test_ui_log(&ui, "%s which=%d axis=%d (%s) value=%+d",
+                            sdl_event_name(event.type), event.caxis.which, event.caxis.axis,
+                            SDL_GameControllerGetStringForAxis(event.caxis.axis)
+                                ? SDL_GameControllerGetStringForAxis(event.caxis.axis) : "?",
+                            event.caxis.value);
                 break;
             case SDL_CONTROLLERBUTTONDOWN:
             case SDL_CONTROLLERBUTTONUP:
                 if (event.cbutton.button < num_buttons)
                     buttons[event.cbutton.button] = event.cbutton.state;
-                test_ui_log(&ui, "BUTTON %s %s",
-                            SDL_GameControllerGetStringForButton(event.cbutton.button),
+                test_ui_log(&ui, "%s which=%d button=%d (%s) %s",
+                            sdl_event_name(event.type), event.cbutton.which, event.cbutton.button,
+                            SDL_GameControllerGetStringForButton(event.cbutton.button)
+                                ? SDL_GameControllerGetStringForButton(event.cbutton.button) : "?",
                             event.cbutton.state ? "DOWN" : "UP");
                 if (event.cbutton.button == SDL_CONTROLLER_BUTTON_MISC1 &&
                     SDL_GameControllerGetType(gamepad) == SDL_CONTROLLER_TYPE_PS5 &&
@@ -388,10 +419,40 @@ static void test_gamecontroller_state(SDL_GameController* gamepad)
                 }
                 break;
             case SDL_CONTROLLERDEVICEADDED:
+            case SDL_CONTROLLERDEVICEREMOVED:
+            case SDL_CONTROLLERDEVICEREMAPPED:
                 test_ui_log(&ui, "%s which=%d", sdl_event_name(event.type), event.cdevice.which);
                 break;
-            case SDL_CONTROLLERDEVICEREMOVED:
-                test_ui_log(&ui, "CONTROLLER REMOVED which=%d", event.cdevice.which);
+            case SDL_JOYAXISMOTION:
+                test_ui_log(&ui, "%s which=%d axis=%d value=%+d",
+                            sdl_event_name(event.type),
+                            event.jaxis.which, event.jaxis.axis, event.jaxis.value);
+                break;
+            case SDL_JOYBUTTONDOWN:
+            case SDL_JOYBUTTONUP:
+                test_ui_log(&ui, "%s which=%d button=%d state=%d",
+                            sdl_event_name(event.type),
+                            event.jbutton.which, event.jbutton.button, event.jbutton.state);
+                break;
+            case SDL_JOYHATMOTION:
+                test_ui_log(&ui, "%s which=%d hat=%d value=0x%02x",
+                            sdl_event_name(event.type),
+                            event.jhat.which, event.jhat.hat, event.jhat.value);
+                break;
+            case SDL_JOYBALLMOTION:
+                test_ui_log(&ui, "%s which=%d ball=%d dx=%d dy=%d",
+                            sdl_event_name(event.type),
+                            event.jball.which, event.jball.ball,
+                            event.jball.xrel, event.jball.yrel);
+                break;
+            case SDL_JOYDEVICEADDED:
+            case SDL_JOYDEVICEREMOVED:
+                test_ui_log(&ui, "%s which=%d", sdl_event_name(event.type), event.jdevice.which);
+                break;
+            case SDL_CLIPBOARDUPDATE:
+            case SDL_KEYMAPCHANGED:
+            case SDL_POLLSENTINEL:
+                test_ui_log(&ui, "%s", sdl_event_name(event.type));
                 break;
             case SDL_QUIT:
                 quit = 1;

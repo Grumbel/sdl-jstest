@@ -272,6 +272,13 @@ static void test_joystick(int joy_idx)
     Uint8* hats = calloc((size_t)num_hats, sizeof(Uint8));
     Sint16* balls = calloc((size_t)num_balls, 2 * sizeof(Sint16));
 
+    for (int i = 0; i < num_axes; ++i)
+        axes[i] = SDL_GetJoystickAxis(joy, i);
+    for (int i = 0; i < num_buttons; ++i)
+        buttons[i] = SDL_GetJoystickButton(joy, i) ? 1 : 0;
+    for (int i = 0; i < num_hats; ++i)
+        hats[i] = SDL_GetJoystickHat(joy, i);
+
     TestUI ui;
     test_ui_init(&ui);
     test_ui_log(&ui, "Opened joystick %d id=%u '%s'", joy_idx, (unsigned)id,
@@ -279,10 +286,12 @@ static void test_joystick(int joy_idx)
 
     int quit = 0;
     SDL_Event event;
+    bool force_draw = true;
     while (!quit)
     {
         SDL_Delay(10);
-        bool redraw = false;
+        bool redraw = force_draw;
+        force_draw = false;
 
         while (SDL_PollEvent(&event))
         {
@@ -292,7 +301,8 @@ static void test_joystick(int joy_idx)
             case SDL_EVENT_JOYSTICK_AXIS_MOTION:
                 if (event.jaxis.axis < num_axes)
                     axes[event.jaxis.axis] = event.jaxis.value;
-                test_ui_log(&ui, "AXIS  joy=%d axis=%d value=%+d",
+                test_ui_log(&ui, "%s which=%d axis=%d value=%+d",
+                            sdl_event_name(event.type),
                             event.jaxis.which, event.jaxis.axis, event.jaxis.value);
                 break;
 
@@ -300,7 +310,8 @@ static void test_joystick(int joy_idx)
             case SDL_EVENT_JOYSTICK_BUTTON_UP:
                 if (event.jbutton.button < num_buttons)
                     buttons[event.jbutton.button] = event.jbutton.down ? 1 : 0;
-                test_ui_log(&ui, "BUTTON joy=%d btn=%d %s",
+                test_ui_log(&ui, "%s which=%d button=%d %s",
+                            sdl_event_name(event.type),
                             event.jbutton.which, event.jbutton.button,
                             event.jbutton.down ? "DOWN" : "UP");
                 break;
@@ -416,36 +427,50 @@ static void test_gamecontroller_state(SDL_Gamepad* gamepad)
     if (has_accel)
         SDL_SetGamepadSensorEnabled(gamepad, SDL_SENSOR_ACCEL, true);
 
+    for (int i = 0; i < num_axes; ++i)
+        axes[i] = SDL_GetGamepadAxis(gamepad, (SDL_GamepadAxis)i);
+    for (int i = 0; i < num_buttons; ++i)
+        buttons[i] = SDL_GetGamepadButton(gamepad, (SDL_GamepadButton)i) ? 1 : 0;
+
     TestUI ui;
     test_ui_init(&ui);
     test_ui_log(&ui, "Gamepad '%s'", SDL_GetGamepadName(gamepad));
 
     int quit = 0;
     SDL_Event event;
+    bool force_draw = true;
     while (!quit)
     {
         SDL_Delay(10);
-        bool redraw = false;
+        bool redraw = force_draw;
+        force_draw = false;
         while (SDL_PollEvent(&event))
         {
             redraw = true;
             switch (event.type)
             {
             case SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
-                test_ui_log(&ui, "SENSOR type=%d [%.3f %.3f %.3f]",
-                            event.gsensor.sensor,
+                test_ui_log(&ui, "%s sensor=%d data=[%.3f %.3f %.3f]",
+                            sdl_event_name(event.type), event.gsensor.sensor,
                             event.gsensor.data[0], event.gsensor.data[1], event.gsensor.data[2]);
                 break;
             case SDL_EVENT_GAMEPAD_AXIS_MOTION:
                 if (event.gaxis.axis < num_axes)
                     axes[event.gaxis.axis] = event.gaxis.value;
+                test_ui_log(&ui, "%s which=%d axis=%d (%s) value=%+d",
+                            sdl_event_name(event.type), event.gaxis.which, event.gaxis.axis,
+                            SDL_GetGamepadStringForAxis(event.gaxis.axis)
+                                ? SDL_GetGamepadStringForAxis(event.gaxis.axis) : "?",
+                            event.gaxis.value);
                 break;
             case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
             case SDL_EVENT_GAMEPAD_BUTTON_UP:
                 if (event.gbutton.button < num_buttons)
                     buttons[event.gbutton.button] = event.gbutton.down ? 1 : 0;
-                test_ui_log(&ui, "BUTTON %s %s",
-                            SDL_GetGamepadStringForButton(event.gbutton.button),
+                test_ui_log(&ui, "%s which=%d button=%d (%s) %s",
+                            sdl_event_name(event.type), event.gbutton.which, event.gbutton.button,
+                            SDL_GetGamepadStringForButton(event.gbutton.button)
+                                ? SDL_GetGamepadStringForButton(event.gbutton.button) : "?",
                             event.gbutton.down ? "DOWN" : "UP");
                 if (event.gbutton.button == SDL_GAMEPAD_BUTTON_MISC1 &&
                     SDL_GetGamepadType(gamepad) == SDL_GAMEPAD_TYPE_PS5 &&
