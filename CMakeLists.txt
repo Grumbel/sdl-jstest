@@ -39,7 +39,8 @@ endif ()
 if (BUILD_SDL_JSTEST)
   find_package(SDL REQUIRED)
 
-  add_executable(sdl1-jstest src/sdl1-jstest.c)
+  add_executable(sdl1-jstest src/sdl1-jstest.c src/ui/test_ui.c src/ui/test_ui.h)
+  target_include_directories(sdl1-jstest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
   target_link_libraries(sdl1-jstest
     SDL::SDL
     PkgConfig::NCURSES
@@ -70,7 +71,8 @@ if (BUILD_SDL2_JSTEST)
     find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2)
   endif ()
 
-  add_executable(sdl2-jstest src/sdl2-jstest.c src/utils/dualsense.h)
+  add_executable(sdl2-jstest src/sdl2-jstest.c src/ui/test_ui.c src/ui/test_ui.h src/utils/dualsense.h)
+  target_include_directories(sdl2-jstest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
   target_link_libraries(sdl2-jstest
     SDL2::SDL2
     PkgConfig::NCURSES
@@ -100,7 +102,8 @@ endif ()
 if (BUILD_SDL3_JSTEST)
   find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3)
 
-  add_executable(sdl3-jstest src/sdl3-jstest.c src/utils/dualsense.h)
+  add_executable(sdl3-jstest src/sdl3-jstest.c src/ui/test_ui.c src/ui/test_ui.h src/utils/dualsense.h)
+  target_include_directories(sdl3-jstest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
   target_link_libraries(sdl3-jstest
     SDL3::SDL3
     PkgConfig::NCURSES

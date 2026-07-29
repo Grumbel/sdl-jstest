@@ -13,20 +13,9 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "utils/dualsense.h"
-
-static void print_bar(int pos, int len)
-{
-    addch('[');
-    for (int i = 0; i < len; ++i)
-    {
-        if (i == pos)
-            addch('#');
-        else
-            addch(' ');
-    }
-    addch(']');
-}
+#include "ui/test_ui.h"
 
 static int str2int(const char* str, int* val)
 {
@@ -142,185 +131,107 @@ static void test_joystick(int joy_idx)
     if (!joy)
     {
         fprintf(stderr, "Unable to open joystick %d\n", joy_idx);
+        return;
     }
-    else
+
+    int num_axes = SDL_JoystickNumAxes(joy);
+    int num_buttons = SDL_JoystickNumButtons(joy);
+    int num_hats = SDL_JoystickNumHats(joy);
+    int num_balls = SDL_JoystickNumBalls(joy);
+    if (num_axes < 0 || num_buttons < 0 || num_hats < 0 || num_balls < 0)
     {
-        initscr();
-
-        //cbreak();
-        noecho();
-        nodelay(stdscr, TRUE);
-        //nonl();
-        curs_set(0);
-
-        int num_axes = SDL_JoystickNumAxes(joy);
-        if (num_axes < 0)
-        {
-            fprintf(stderr, "Unable to get SDL axes count: %s\n", SDL_GetError());
-            exit(EXIT_FAILURE);
-        }
-
-        int num_buttons = SDL_JoystickNumButtons(joy);
-        if (num_buttons < 0)
-        {
-            fprintf(stderr, "Unable to get SDL buttons count: %s\n", SDL_GetError());
-            exit(EXIT_FAILURE);
-        }
-
-        int num_hats = SDL_JoystickNumHats(joy);
-        if (num_hats < 0)
-        {
-            fprintf(stderr, "Unable to get SDL hats count: %s\n", SDL_GetError());
-            exit(EXIT_FAILURE);
-        }
-
-        int num_balls = SDL_JoystickNumBalls(joy);
-        if (num_balls < 0)
-        {
-            fprintf(stderr, "Unable to get SDL balls count: %s\n", SDL_GetError());
-            exit(EXIT_FAILURE);
-        }
-
-        Sint16* axes = calloc((size_t)num_axes, sizeof(Sint16));
-        Uint8* buttons = calloc((size_t)num_buttons, sizeof(Uint8));
-        Uint8* hats = calloc((size_t)num_hats, sizeof(Uint8));
-        Sint16* balls = calloc((size_t)num_balls, 2 * sizeof(Sint16));
-
-        int quit = 0;
-        SDL_Event event;
-        while (!quit)
-        {
-            SDL_Delay(10);
-
-            bool something_new = FALSE;
-            while (SDL_PollEvent(&event))
-            {
-                something_new = TRUE;
-                switch (event.type)
-                {
-                case SDL_JOYAXISMOTION:
-                    assert(event.jaxis.axis < num_axes);
-                    axes[event.jaxis.axis] = event.jaxis.value;
-                    break;
-
-                case SDL_JOYBUTTONDOWN:
-                case SDL_JOYBUTTONUP:
-                    assert(event.jbutton.button < num_buttons);
-                    buttons[event.jbutton.button] = event.jbutton.state;
-                    break;
-
-                case SDL_JOYHATMOTION:
-                    assert(event.jhat.hat < num_hats);
-                    hats[event.jhat.hat] = event.jhat.value;
-                    break;
-
-                case SDL_JOYBALLMOTION:
-                    assert(event.jball.ball < num_balls);
-                    balls[2 * event.jball.ball + 0] = event.jball.xrel;
-                    balls[2 * event.jball.ball + 1] = event.jball.yrel;
-                    break;
-
-                case SDL_CLIPBOARDUPDATE:
-                    break;
-
-                case SDL_KEYMAPCHANGED:
-                    break;
-
-                case SDL_QUIT:
-                    quit = 1;
-                    printf("Recieved interrupt, exiting\n");
-                    break;
-
-                default:
-                    fprintf(stderr, "Error: Unhandled event type: %d\n", event.type);
-                }
-            }
-
-            if (something_new)
-            {
-                //clear();
-                move(0, 0);
-
-                printw("Joystick Name:   '%s'\n", SDL_JoystickName(joy));
-                printw("Joystick Number: %d\n", joy_idx);
-                printw("\n");
-
-                printw("Axes %2d:\n", num_axes);
-                for (int i = 0; i < num_axes; ++i)
-                {
-                    int len = COLS - 20;
-                    printw("  %2d: %6d  ", i, axes[i]);
-                    print_bar((axes[i] + 32767) * (len - 1) / 65534, len);
-                    addch('\n');
-                }
-                printw("\n");
-
-                printw("Buttons %2d:\n", num_buttons);
-                for (int i = 0; i < num_buttons; ++i)
-                {
-                    printw("  %2d: %d  %s\n", i, buttons[i], buttons[i] ? "[#]" : "[ ]");
-                }
-                printw("\n");
-
-                printw("Hats %2d:\n", num_hats);
-                for (int i = 0; i < num_hats; ++i)
-                {
-                    printw("  %2d: value: %d\n", i, hats[i]);
-                    printw("  +-----+  up:    %c\n"
-                           "  |%c %c %c|  down:  %c\n"
-                           "  |%c %c %c|  left:  %c\n"
-                           "  |%c %c %c|  right: %c\n"
-                           "  +-----+\n",
-
-                           (hats[i] & SDL_HAT_UP) ? '1' : '0',
-
-                           ((hats[i] & SDL_HAT_UP) && (hats[i] & SDL_HAT_LEFT)) ? 'O' : ' ',
-                           ((hats[i] & SDL_HAT_UP) && !(hats[i] & (SDL_HAT_LEFT | SDL_HAT_RIGHT))) ? 'O' : ' ',
-                           ((hats[i] & SDL_HAT_UP) && (hats[i] & SDL_HAT_RIGHT)) ? 'O' : ' ',
-
-                           (hats[i] & SDL_HAT_DOWN) ? '1' : '0',
-
-                           (!(hats[i] & (SDL_HAT_UP | SDL_HAT_DOWN)) && (hats[i] & SDL_HAT_LEFT)) ? 'O' : ' ',
-                           (!(hats[i] & (SDL_HAT_UP | SDL_HAT_DOWN)) && !(hats[i] & (SDL_HAT_LEFT | SDL_HAT_RIGHT)))
-                               ? 'O'
-                               : ' ',
-                           (!(hats[i] & (SDL_HAT_UP | SDL_HAT_DOWN)) && (hats[i] & SDL_HAT_RIGHT)) ? 'O' : ' ',
-
-                           (hats[i] & SDL_HAT_LEFT) ? '1' : '0',
-
-                           ((hats[i] & SDL_HAT_DOWN) && (hats[i] & SDL_HAT_LEFT)) ? 'O' : ' ',
-                           ((hats[i] & SDL_HAT_DOWN) && !(hats[i] & (SDL_HAT_LEFT | SDL_HAT_RIGHT))) ? 'O' : ' ',
-                           ((hats[i] & SDL_HAT_DOWN) && (hats[i] & SDL_HAT_RIGHT)) ? 'O' : ' ',
-
-                           (hats[i] & SDL_HAT_RIGHT) ? '1' : '0');
-                }
-                printw("\n");
-
-                printw("Balls %2d: ", num_balls);
-                for (int i = 0; i < num_balls; ++i)
-                {
-                    printw("  %2d: %6d %6d\n", i, balls[2 * i + 0], balls[2 * i + 1]);
-                }
-                printw("\n");
-                printw("\n");
-                printw("Press Ctrl-c to exit\n");
-
-                refresh();
-            }
-
-            if (getch() == 3) // Ctrl-c
-            {
-                quit = 1;
-            }
-        } // while
-
-        free(balls);
-        free(hats);
-        free(buttons);
-        free(axes);
-
-        endwin();
+        fprintf(stderr, "Unable to query joystick layout: %s\n", SDL_GetError());
+        exit(EXIT_FAILURE);
     }
+
+    Sint16* axes = calloc((size_t)num_axes, sizeof(Sint16));
+    Uint8* buttons = calloc((size_t)num_buttons, sizeof(Uint8));
+    Uint8* hats = calloc((size_t)num_hats, sizeof(Uint8));
+    Sint16* balls = calloc((size_t)num_balls, 2 * sizeof(Sint16));
+
+    TestUI ui;
+    test_ui_init(&ui);
+    test_ui_log(&ui, "Opened joystick %d '%s'", joy_idx,
+                SDL_JoystickName(joy) ? SDL_JoystickName(joy) : "?");
+
+    int quit = 0;
+    SDL_Event event;
+    while (!quit)
+    {
+        SDL_Delay(10);
+        bool redraw = false;
+        while (SDL_PollEvent(&event))
+        {
+            redraw = true;
+            switch (event.type)
+            {
+            case SDL_JOYAXISMOTION:
+                if (event.jaxis.axis < num_axes)
+                    axes[event.jaxis.axis] = event.jaxis.value;
+                test_ui_log(&ui, "AXIS  joy=%d axis=%d value=%+d",
+                            event.jaxis.which, event.jaxis.axis, event.jaxis.value);
+                break;
+            case SDL_JOYBUTTONDOWN:
+            case SDL_JOYBUTTONUP:
+                if (event.jbutton.button < num_buttons)
+                    buttons[event.jbutton.button] = event.jbutton.state;
+                test_ui_log(&ui, "BUTTON joy=%d btn=%d %s",
+                            event.jbutton.which, event.jbutton.button,
+                            event.jbutton.state ? "DOWN" : "UP");
+                break;
+            case SDL_JOYHATMOTION:
+                if (event.jhat.hat < num_hats)
+                    hats[event.jhat.hat] = event.jhat.value;
+                test_ui_log(&ui, "HAT    joy=%d hat=%d value=%d",
+                            event.jhat.which, event.jhat.hat, event.jhat.value);
+                break;
+            case SDL_JOYBALLMOTION:
+                if (event.jball.ball < num_balls)
+                {
+                    balls[2 * event.jball.ball] = event.jball.xrel;
+                    balls[2 * event.jball.ball + 1] = event.jball.yrel;
+                }
+                test_ui_log(&ui, "BALL   joy=%d ball=%d dx=%d dy=%d",
+                            event.jball.which, event.jball.ball,
+                            event.jball.xrel, event.jball.yrel);
+                break;
+            case SDL_JOYDEVICEADDED:
+                test_ui_log(&ui, "DEVICE ADDED   which=%d", event.jdevice.which);
+                break;
+            case SDL_JOYDEVICEREMOVED:
+                test_ui_log(&ui, "DEVICE REMOVED which=%d", event.jdevice.which);
+                break;
+            case SDL_CONTROLLERDEVICEADDED:
+                test_ui_log(&ui, "CONTROLLER ADDED which=%d", event.cdevice.which);
+                break;
+            case SDL_CONTROLLERDEVICEREMOVED:
+                test_ui_log(&ui, "CONTROLLER REMOVED which=%d", event.cdevice.which);
+                break;
+            case SDL_QUIT:
+                quit = 1;
+                break;
+            default:
+                test_ui_log(&ui, "EVENT  type=%u", (unsigned)event.type);
+                break;
+            }
+        }
+        if (redraw || ui.dirty)
+        {
+            test_ui_draw_joystick(&ui, SDL_JoystickName(joy), joy_idx,
+                                  axes, num_axes, buttons, num_buttons, NULL,
+                                  hats, num_hats, balls, num_balls);
+            test_ui_refresh(&ui);
+        }
+        if (test_ui_check_quit(&ui))
+            quit = 1;
+    }
+
+    test_ui_shutdown(&ui);
+    free(balls);
+    free(hats);
+    free(buttons);
+    free(axes);
+    SDL_JoystickClose(joy);
 }
 
 static Uint16 ConvertAxisToRumble(Sint16 axisval)
@@ -341,176 +252,96 @@ static void test_gamecontroller_state(SDL_GameController* gamepad)
 {
     assert(gamepad);
 
-    printf("Entering gamecontroller test loop, press Ctrl-c to exit\n");
-    int quit = 0;
-    SDL_Event event;
-
-    initscr();
-
-    // cbreak();
-    noecho();
-    nodelay(stdscr, TRUE);
-    // nonl();
-    curs_set(0);
-
     int num_axes = SDL_CONTROLLER_AXIS_MAX;
     int num_buttons = SDL_CONTROLLER_BUTTON_MAX;
-
     Sint16* axes = calloc((size_t)num_axes, sizeof(Sint16));
     Uint8* buttons = calloc((size_t)num_buttons, sizeof(Uint8));
+    const char** labels = calloc((size_t)num_buttons, sizeof(char*));
+    for (int i = 0; i < num_buttons; ++i)
+    {
+        const char* s = SDL_GameControllerGetStringForButton(i);
+        labels[i] = s ? s : "";
+    }
 
     bool has_gyro = SDL_GameControllerHasSensor(gamepad, SDL_SENSOR_GYRO);
     if (has_gyro)
-    {
         SDL_GameControllerSetSensorEnabled(gamepad, SDL_SENSOR_GYRO, SDL_TRUE);
-    }
     bool has_accel = SDL_GameControllerHasSensor(gamepad, SDL_SENSOR_ACCEL);
     if (has_accel)
-    {
         SDL_GameControllerSetSensorEnabled(gamepad, SDL_SENSOR_ACCEL, SDL_TRUE);
-    }
-    float gyro[3] = {0.0f, 0.0f, 0.0f};
-    float accel[3] = {0.0f, 0.0f, 0.0f};
 
-    bool has_led = SDL_GameControllerHasLED(gamepad);
-    int touchpads = SDL_GameControllerGetNumTouchpads(gamepad);
-    bool has_rumble = SDL_GameControllerHasRumble(gamepad);
+    TestUI ui;
+    test_ui_init(&ui);
+    test_ui_log(&ui, "GameController '%s'", SDL_GameControllerName(gamepad));
 
-    while (!quit && SDL_WaitEvent(&event))
+    int quit = 0;
+    SDL_Event event;
+    while (!quit)
     {
-        switch (event.type)
+        SDL_Delay(10);
+        bool redraw = false;
+        while (SDL_PollEvent(&event))
         {
-        case SDL_CONTROLLERSENSORUPDATE:
+            redraw = true;
+            switch (event.type)
             {
-                switch (event.csensor.sensor)
+            case SDL_CONTROLLERSENSORUPDATE:
+                test_ui_log(&ui, "SENSOR type=%d", event.csensor.sensor);
+                break;
+            case SDL_CONTROLLERAXISMOTION:
+                if (event.caxis.axis < num_axes)
+                    axes[event.caxis.axis] = event.caxis.value;
+                break;
+            case SDL_CONTROLLERBUTTONDOWN:
+            case SDL_CONTROLLERBUTTONUP:
+                if (event.cbutton.button < num_buttons)
+                    buttons[event.cbutton.button] = event.cbutton.state;
+                test_ui_log(&ui, "BUTTON %s %s",
+                            SDL_GameControllerGetStringForButton(event.cbutton.button),
+                            event.cbutton.state ? "DOWN" : "UP");
+                if (event.cbutton.button == SDL_CONTROLLER_BUTTON_MISC1 &&
+                    SDL_GameControllerGetType(gamepad) == SDL_CONTROLLER_TYPE_PS5 &&
+                    event.cbutton.state)
                 {
-                case SDL_SENSOR_GYRO:
-                    gyro[0] = event.csensor.data[0];
-                    gyro[1] = event.csensor.data[1];
-                    gyro[2] = event.csensor.data[2];
-                    break;
-                case SDL_SENSOR_ACCEL:
-                    accel[0] = event.csensor.data[0];
-                    accel[1] = event.csensor.data[1];
-                    accel[2] = event.csensor.data[2];
-                    break;
+                    CyclePS5TriggerEffect(gamepad);
+                    test_ui_log(&ui, "PS5 trigger effect cycled");
                 }
                 break;
+            case SDL_CONTROLLERDEVICEADDED:
+                test_ui_log(&ui, "CONTROLLER ADDED which=%d", event.cdevice.which);
+                break;
+            case SDL_CONTROLLERDEVICEREMOVED:
+                test_ui_log(&ui, "CONTROLLER REMOVED which=%d", event.cdevice.which);
+                break;
+            case SDL_QUIT:
+                quit = 1;
+                break;
+            default:
+                test_ui_log(&ui, "EVENT type=%u", (unsigned)event.type);
+                break;
             }
-        case SDL_CONTROLLERAXISMOTION:
-            assert(event.caxis.axis < num_axes);
-            axes[event.caxis.axis] = event.caxis.value;
-            break;
-        case SDL_CONTROLLERBUTTONDOWN:
-        case SDL_CONTROLLERBUTTONUP:
-            assert(event.cbutton.button < num_buttons);
-            buttons[event.cbutton.button] = event.cbutton.state;
-
-        /* Cycle PS5 trigger effects when the microphone button is pressed */
-            if (event.cbutton.button == SDL_CONTROLLER_BUTTON_MISC1 &&
-                SDL_GameControllerGetType(gamepad) == SDL_CONTROLLER_TYPE_PS5)
+            if (trigger_effect == 0)
             {
-                CyclePS5TriggerEffect(gamepad);
-            }
-            break;
-        case SDL_QUIT:
-            quit = 1;
-            printf("Received interrupt, exiting\n");
-            break;
-        }
-
-        if (trigger_effect == 0)
-        {
-            {
-                /* Update rumble based on trigger state */
                 Sint16 left = SDL_GameControllerGetAxis(gamepad, SDL_CONTROLLER_AXIS_TRIGGERLEFT);
                 Sint16 right = SDL_GameControllerGetAxis(gamepad, SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
-                Uint16 low_frequency_rumble = ConvertAxisToRumble(left);
-                Uint16 high_frequency_rumble = ConvertAxisToRumble(right);
-                SDL_GameControllerRumble(gamepad, low_frequency_rumble, high_frequency_rumble, 250);
-            }
-            {
-                /* Update trigger rumble based on thumbstick state */
-                Sint16 left = SDL_GameControllerGetAxis(gamepad, SDL_CONTROLLER_AXIS_LEFTY);
-                Sint16 right = SDL_GameControllerGetAxis(gamepad, SDL_CONTROLLER_AXIS_RIGHTY);
-                Uint16 left_rumble = ConvertAxisToRumble(left);
-                Uint16 right_rumble = ConvertAxisToRumble(right);
-
-                SDL_GameControllerRumbleTriggers(gamepad, left_rumble, right_rumble, 250);
+                SDL_GameControllerRumble(gamepad, ConvertAxisToRumble(left), ConvertAxisToRumble(right), 250);
             }
         }
-
-        // clear();
-        move(0, 0);
-
-        printw("Joystick Name:   '%s'\n", SDL_GameControllerName(gamepad));
-        printw("Joystick Number: %d\n", SDL_GameControllerGetPlayerIndex(gamepad));
-        printw("\n");
-
-        if (has_gyro)
-            printw("Gyro:  [ %6.3f  %6.3f  %6.3f ]\n", gyro[0], gyro[1], gyro[2]);
-        if (has_accel)
-            printw("Accel: [ %6.3f  %6.3f  %6.3f ]\n", accel[0], accel[1], accel[2]);
-        printw("\n");
-
-        printw("Axes:\n");
-        for (int i = 0; i < num_axes; ++i)
+        if (redraw || ui.dirty)
         {
-            int len = COLS - 20;
-            printw("  %2d: %6d  ", i, axes[i]);
-            print_bar((axes[i] + 32767) * (len - 1) / 65534, len);
-            addch('\n');
+            test_ui_draw_joystick(&ui, SDL_GameControllerName(gamepad),
+                                  SDL_GameControllerGetPlayerIndex(gamepad),
+                                  axes, num_axes, buttons, num_buttons, labels,
+                                  NULL, 0, NULL, 0);
+            test_ui_refresh(&ui);
         }
-        printw("\n");
-
-        printw("Buttons:\n");
-        // A, B, X, Y
-        for (int i = 0; i < 4; ++i)
-        {
-            printw("  %9.9s: %s", SDL_GameControllerGetStringForButton(i), buttons[i] ? "[#]" : "[ ]");
-        }
-        printw("\n");
-        // Back, Guide, Start
-        for (int i = 4; i < 7; ++i)
-        {
-            printw("  %9.9s: %s", SDL_GameControllerGetStringForButton(i), buttons[i] ? "[#]" : "[ ]");
-        }
-        printw("\n");
-        // Left stick, right stick, left shoulder, right shoulder
-        for (int i = 7; i < 11; ++i)
-        {
-            printw("  %9.9s: %s", SDL_GameControllerGetStringForButton(i), buttons[i] ? "[#]" : "[ ]");
-        }
-        printw("\n");
-        // D-pad
-        for (int i = 11; i < 15; ++i)
-        {
-            printw("  %9.9s: %s", SDL_GameControllerGetStringForButton(i), buttons[i] ? "[#]" : "[ ]");
-        }
-        printw("\n");
-        // Rest
-        for (int i = 15; i < num_buttons; ++i)
-        {
-            printw("  %9.9s: %s", SDL_GameControllerGetStringForButton(i), buttons[i] ? "[#]" : "[ ]");
-        }
-        printw("\n");
-        printw("\n");
-
-        printw("Misc:\n");
-        printw("  %9.9s: %s", "LED", has_led ? "[#]" : "[ ]");
-        printw("  %9.9s: %d", "Touchpads", touchpads);
-        printw("  %9.9s: %s", "Rumble", has_rumble ? "[#]" : "[ ]");
-
-        printw("\n");
-        printw("\n");
-        printw("Press Ctrl-c to exit\n");
-
-        refresh();
+        if (test_ui_check_quit(&ui))
+            quit = 1;
     }
-
+    test_ui_shutdown(&ui);
+    free(labels);
     free(buttons);
     free(axes);
-    endwin();
 }
 
 static void test_gamecontroller(int gamecontroller_idx)

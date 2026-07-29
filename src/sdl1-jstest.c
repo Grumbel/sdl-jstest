@@ -13,24 +13,13 @@
 
 #include <SDL.h>
 
+#include "ui/test_ui.h"
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #define NOGDI
 #  include <windows.h>
 #endif
-
-static void print_bar(int pos, int len)
-{
-  addch('[');
-  for(int i = 0; i < len; ++i)
-  {
-    if (i == pos)
-      addch('#');
-    else
-      addch(' ');
-  }
-  addch(']');
-}
 
 static int str2int(const char* str, int* val)
 {
@@ -161,6 +150,7 @@ int main(int argc, char** argv)
         exit(1);
       }
 
+
       SDL_Joystick* joy = SDL_JoystickOpen(joy_idx);
       if (!joy)
       {
@@ -168,35 +158,12 @@ int main(int argc, char** argv)
       }
       else
       {
-        initscr();
-
-        //cbreak();
-        noecho();
-        nodelay(stdscr, TRUE);
-        //nonl();
-        curs_set(0);
-
         int num_axes    = SDL_JoystickNumAxes(joy);
-        if (num_axes < 0) {
-          fprintf(stderr, "Unable to get SDL axes count: %s\n", SDL_GetError());
-          exit(EXIT_FAILURE);
-        }
-
         int num_buttons = SDL_JoystickNumButtons(joy);
-        if (num_buttons < 0) {
-          fprintf(stderr, "Unable to get SDL buttons count: %s\n", SDL_GetError());
-          exit(EXIT_FAILURE);
-        }
-
         int num_hats    = SDL_JoystickNumHats(joy);
-        if (num_hats < 0) {
-          fprintf(stderr, "Unable to get SDL hats count: %s\n", SDL_GetError());
-          exit(EXIT_FAILURE);
-        }
-
         int num_balls   = SDL_JoystickNumBalls(joy);
-        if (num_balls < 0) {
-          fprintf(stderr, "Unable to get SDL balls count: %s\n", SDL_GetError());
+        if (num_axes < 0 || num_buttons < 0 || num_hats < 0 || num_balls < 0) {
+          fprintf(stderr, "Unable to query joystick layout: %s\n", SDL_GetError());
           exit(EXIT_FAILURE);
         }
 
@@ -205,136 +172,79 @@ int main(int argc, char** argv)
         Uint8*  hats    = calloc((size_t)num_hats,    sizeof(Uint8));
         Sint16* balls   = calloc((size_t)num_balls,   2*sizeof(Sint16));
 
+        TestUI ui;
+        test_ui_init(&ui);
+        test_ui_log(&ui, "Opened joystick %d '%s'", joy_idx,
+                    SDL_JoystickName(joy_idx) ? SDL_JoystickName(joy_idx) : "?");
+
         int quit = 0;
         SDL_Event event;
-        bool something_new = TRUE;
         while(!quit)
         {
           SDL_Delay(10);
-
+          int redraw = 0;
           while (SDL_PollEvent(&event)) {
-            something_new = TRUE;
+            redraw = 1;
             switch(event.type)
             {
               case SDL_JOYAXISMOTION:
-                assert(event.jaxis.axis < num_axes);
-                axes[event.jaxis.axis] = event.jaxis.value;
+                if (event.jaxis.axis < num_axes)
+                  axes[event.jaxis.axis] = event.jaxis.value;
+                test_ui_log(&ui, "AXIS  joy=%d axis=%d value=%+d",
+                            event.jaxis.which, event.jaxis.axis, event.jaxis.value);
                 break;
-
               case SDL_JOYBUTTONDOWN:
               case SDL_JOYBUTTONUP:
-                assert(event.jbutton.button < num_buttons);
-                buttons[event.jbutton.button] = event.jbutton.state;
+                if (event.jbutton.button < num_buttons)
+                  buttons[event.jbutton.button] = event.jbutton.state;
+                test_ui_log(&ui, "BUTTON joy=%d btn=%d %s",
+                            event.jbutton.which, event.jbutton.button,
+                            event.jbutton.state ? "DOWN" : "UP");
                 break;
-
               case SDL_JOYHATMOTION:
-                assert(event.jhat.hat < num_hats);
-                hats[event.jhat.hat] = event.jhat.value;
+                if (event.jhat.hat < num_hats)
+                  hats[event.jhat.hat] = event.jhat.value;
+                test_ui_log(&ui, "HAT    joy=%d hat=%d value=%d",
+                            event.jhat.which, event.jhat.hat, event.jhat.value);
                 break;
-
               case SDL_JOYBALLMOTION:
-                assert(event.jball.ball < num_balls);
-                balls[2*event.jball.ball + 0] = event.jball.xrel;
-                balls[2*event.jball.ball + 1] = event.jball.yrel;
+                if (event.jball.ball < num_balls) {
+                  balls[2*event.jball.ball + 0] = event.jball.xrel;
+                  balls[2*event.jball.ball + 1] = event.jball.yrel;
+                }
+                test_ui_log(&ui, "BALL   joy=%d ball=%d dx=%d dy=%d",
+                            event.jball.which, event.jball.ball,
+                            event.jball.xrel, event.jball.yrel);
                 break;
-
               case SDL_QUIT:
                 quit = 1;
-                printf("Recieved interrupt, exiting\n");
                 break;
-
               default:
-                fprintf(stderr, "Error: Unhandled event type: %d\n", event.type);
+                test_ui_log(&ui, "EVENT  type=%u", (unsigned)event.type);
                 break;
             }
           }
 
-          if (something_new)
+          if (redraw || ui.dirty)
           {
-            //clear();
-            move(0,0);
-
-            printw("Joystick Name:   '%s'\n", SDL_JoystickName(joy_idx));
-            printw("Joystick Number: %d\n", joy_idx);
-            printw("\n");
-
-            printw("Axes %2d:\n", num_axes);
-            for(int i = 0; i < num_axes; ++i)
-            {
-              int len = COLS - 20;
-              printw("  %2d: %6d  ", i, axes[i]);
-              print_bar((axes[i] + 32767) * (len-1) / 65534, len);
-              addch('\n');
-            }
-            printw("\n");
-
-            printw("Buttons %2d:\n", num_buttons);
-            for(int i = 0; i < num_buttons; ++i)
-            {
-              printw("  %2d: %d  %s\n", i, buttons[i], buttons[i] ? "[#]":"[ ]");
-            }
-            printw("\n");
-
-            printw("Hats %2d:\n", num_hats);
-            for(int i = 0; i < num_hats; ++i)
-            {
-              printw("  %2d: value: %d\n", i, hats[i]);
-              printw("  +-----+  up:    %c\n"
-                     "  |%c %c %c|  down:  %c\n"
-                     "  |%c %c %c|  left:  %c\n"
-                     "  |%c %c %c|  right: %c\n"
-                     "  +-----+\n",
-
-                     (hats[i] & SDL_HAT_UP)?'1':'0',
-
-                     ((hats[i] & SDL_HAT_UP) && (hats[i] & SDL_HAT_LEFT)) ? 'O' : ' ',
-                     ((hats[i] & SDL_HAT_UP) && !(hats[i] & (SDL_HAT_LEFT | SDL_HAT_RIGHT))) ? 'O' : ' ',
-                     ((hats[i] & SDL_HAT_UP) && (hats[i] & SDL_HAT_RIGHT)) ? 'O' : ' ',
-
-                     (hats[i] & SDL_HAT_DOWN)?'1':'0',
-
-                     (!(hats[i] & (SDL_HAT_UP | SDL_HAT_DOWN)) && (hats[i] & SDL_HAT_LEFT)) ? 'O' : ' ',
-                     (!(hats[i] & (SDL_HAT_UP | SDL_HAT_DOWN)) && !(hats[i] & (SDL_HAT_LEFT | SDL_HAT_RIGHT))) ? 'O' : ' ',
-                     (!(hats[i] & (SDL_HAT_UP | SDL_HAT_DOWN)) && (hats[i] & SDL_HAT_RIGHT)) ? 'O' : ' ',
-
-                     (hats[i] & SDL_HAT_LEFT)?'1':'0',
-
-                     ((hats[i] & SDL_HAT_DOWN) && (hats[i] & SDL_HAT_LEFT)) ? 'O' : ' ',
-                     ((hats[i] & SDL_HAT_DOWN) && !(hats[i] & (SDL_HAT_LEFT | SDL_HAT_RIGHT))) ? 'O' : ' ',
-                     ((hats[i] & SDL_HAT_DOWN) && (hats[i] & SDL_HAT_RIGHT)) ? 'O' : ' ',
-
-                     (hats[i] & SDL_HAT_RIGHT)?'1':'0');
-            }
-            printw("\n");
-
-            printw("Balls %2d: ", num_balls);
-            for(int i = 0; i < num_balls; ++i)
-            {
-              printw("  %2d: %6d %6d\n", i, balls[2*i+0], balls[2*i+1]);
-            }
-            printw("\n");
-            printw("\n");
-            printw("Press Ctrl-c to exit\n");
-
-            refresh();
-
-            something_new = FALSE;
+            test_ui_draw_joystick(&ui, SDL_JoystickName(joy_idx), joy_idx,
+                                  axes, num_axes, buttons, num_buttons, NULL,
+                                  hats, num_hats, balls, num_balls);
+            test_ui_refresh(&ui);
           }
-
-          if ( getch() == 3 ) // Ctrl-c
-          {
+          if (test_ui_check_quit(&ui))
             quit = 1;
-          }
-        } // while
+        }
 
+        test_ui_shutdown(&ui);
         free(balls);
         free(hats);
         free(buttons);
         free(axes);
-
-        endwin();
+        SDL_JoystickClose(joy);
       }
     }
+
     else if (argc == 3 && (strcmp(argv[1], "--event") == 0 ||
                            strcmp(argv[1], "-e") == 0))
     {

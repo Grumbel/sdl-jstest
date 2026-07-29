@@ -13,6 +13,7 @@ Key paths:
 | `src/sdl1-jstest.c` | SDL 1.2 joystick tester |
 | `src/sdl2-jstest.c` | SDL 2 joystick / GameController tester |
 | `src/sdl3-jstest.c` | SDL 3 joystick / Gamepad tester |
+| `src/ui/test_ui.*` | Shared ncurses test UI (split panes, event log) |
 | `src/utils/dualsense.h` | DualSense (PS5) trigger-effect helpers |
 | `doc/` | Man pages and screenshots |
 | `data/` | Application icons (SVG) |
