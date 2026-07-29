@@ -1,4 +1,7 @@
-// SPDX-FileCopyrightText: 2015-2026 Ingo Ruhnke <grumbel@gmail.com>
+// SPDX-FileCopyrightText: 2009-2026 Ingo Ruhnke <grumbel@gmail.com>
+// SPDX-FileCopyrightText: 2017 Jaime Moreira <jmoreirag@gmail.com>
+// SPDX-FileCopyrightText: 2018 Anthony J. Bentley <anthony@anjbe.name>
+// SPDX-FileCopyrightText: 2023 orbea <orbea@riseup.net>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <assert.h>

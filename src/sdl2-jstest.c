@@ -1,4 +1,9 @@
-// SPDX-FileCopyrightText: 2015-2026 Ingo Ruhnke <grumbel@gmail.com>
+// SPDX-FileCopyrightText: 2014-2026 Ingo Ruhnke <grumbel@gmail.com>
+// SPDX-FileCopyrightText: 2017 Jaime Moreira <jmoreirag@gmail.com>
+// SPDX-FileCopyrightText: 2018 Anthony J. Bentley <anthony@anjbe.name>
+// SPDX-FileCopyrightText: 2022 orbea <orbea@riseup.net>
+// SPDX-FileCopyrightText: 2024 GhostlyDark <31742919+GhostlyDark@users.noreply.github.com>
+// SPDX-FileCopyrightText: 2024-2025 ABeltramo <beltramo.ale@gmail.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <SDL.h>

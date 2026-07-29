@@ -1,26 +1,49 @@
 version = 1
 
 [[annotations]]
-path = [
-    "README.md",
-    "AGENTS.md",
-]
-SPDX-FileCopyrightText = "2015-2026 Ingo Ruhnke <grumbel@gmail.com>"
+path = ["README.md"]
+SPDX-FileCopyrightText = """
+2014 Mark Johnson <mark@barrenfrozenwasteland.com>
+2015-2026 Ingo Ruhnke <grumbel@gmail.com>
+2017 Jaime Moreira <jmoreirag@gmail.com>
+2020 Stuart Axon <stuaxo2@yahoo.com>
+"""
 SPDX-License-Identifier = "GPL-3.0-or-later"
 
 [[annotations]]
-path = [
-    "data/**.svg",
-    "doc/screenshots/**",
-]
-SPDX-FileCopyrightText = "2015-2026 Ingo Ruhnke <grumbel@gmail.com>"
+path = ["AGENTS.md"]
+SPDX-FileCopyrightText = "2026 Ingo Ruhnke <grumbel@gmail.com>"
 SPDX-License-Identifier = "GPL-3.0-or-later"
 
 [[annotations]]
-path = [
-    "doc/*.1",
-]
-SPDX-FileCopyrightText = "2015-2026 Ingo Ruhnke <grumbel@gmail.com>"
+path = ["data/**.svg"]
+SPDX-FileCopyrightText = "2023-2026 Ingo Ruhnke <grumbel@gmail.com>"
+SPDX-License-Identifier = "GPL-3.0-or-later"
+
+[[annotations]]
+path = ["doc/screenshots/**"]
+SPDX-FileCopyrightText = "2023 Ingo Ruhnke <grumbel@gmail.com>"
+SPDX-License-Identifier = "GPL-3.0-or-later"
+
+[[annotations]]
+path = ["doc/sdl-jstest.1"]
+SPDX-FileCopyrightText = """
+2011-2026 Ingo Ruhnke <grumbel@gmail.com>
+2018 Anthony J. Bentley <anthony@anjbe.name>
+"""
+SPDX-License-Identifier = "GPL-3.0-or-later"
+
+[[annotations]]
+path = ["doc/sdl2-jstest.1"]
+SPDX-FileCopyrightText = """
+2014-2026 Ingo Ruhnke <grumbel@gmail.com>
+2018 Anthony J. Bentley <anthony@anjbe.name>
+"""
+SPDX-License-Identifier = "GPL-3.0-or-later"
+
+[[annotations]]
+path = ["doc/sdl3-jstest.1"]
+SPDX-FileCopyrightText = "2026 Ingo Ruhnke <grumbel@gmail.com>"
 SPDX-License-Identifier = "GPL-3.0-or-later"
 
 [[annotations]]

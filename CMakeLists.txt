@@ -1,4 +1,7 @@
 # SPDX-FileCopyrightText: 2015-2026 Ingo Ruhnke <grumbel@gmail.com>
+# SPDX-FileCopyrightText: 2018 Anthony J. Bentley <anthony@anjbe.name>
+# SPDX-FileCopyrightText: 2021-2025 orbea <orbea@riseup.net>
+# SPDX-FileCopyrightText: 2025 ABeltramo <beltramo.ale@gmail.com>
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 cmake_minimum_required(VERSION 3.10...4.1)
