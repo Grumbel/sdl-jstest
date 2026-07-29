@@ -30,10 +30,11 @@
                then SDL2-win32.packages.${pkgs.stdenv.hostPlatform.system}.default
                else pkgs.SDL2;
 
-        # SDL3 win32 packaging is not wired up yet; build SDL3 only on non-Windows.
+        # nixpkgs attribute is lowercase sdl3 (unlike SDL/SDL2).
+        # Win32 packaging is not wired up yet.
         SDL3 = if pkgs.stdenv.hostPlatform.isWindows
                then null
-               else pkgs.SDL3;
+               else (pkgs.sdl3 or null);
 
         ncurses-win32 = (pkgs.ncurses.override {
           # enableStatic = true;
