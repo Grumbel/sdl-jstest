@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=SDL2 Joystick Test
+GenericName=Joystick Tester
+Comment=Test joysticks and game controllers with SDL 2
+Exec=sdl2-jstest
+Icon=sdl2-jstest
+Terminal=true
+Categories=Utility;Game;HardwareSettings;
+Keywords=joystick;gamepad;controller;sdl;test;
+StartupNotify=false

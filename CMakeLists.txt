@@ -58,6 +58,10 @@ if (BUILD_SDL_JSTEST)
   install(FILES
     data/sdl1-jstest.svg
     DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
+
+  install(FILES
+    data/sdl1-jstest.desktop
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
 endif ()
 
 if (BUILD_SDL2_JSTEST)
@@ -97,6 +101,10 @@ if (BUILD_SDL2_JSTEST)
   install(FILES
     data/sdl2-jstest.svg
     DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
+
+  install(FILES
+    data/sdl2-jstest.desktop
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
 endif ()
 
 if (BUILD_SDL3_JSTEST)
@@ -128,6 +136,10 @@ if (BUILD_SDL3_JSTEST)
   install(FILES
     data/sdl3-jstest.svg
     DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
+
+  install(FILES
+    data/sdl3-jstest.desktop
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
 endif ()
 
 # EOF #
