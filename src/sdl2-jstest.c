@@ -278,32 +278,6 @@ static void test_joystick(int joy_idx)
             case SDL_CONTROLLERDEVICEREMOVED:
                 test_ui_log(&ui, "%s which=%d", sdl_event_name(event.type), event.cdevice.which);
                 break;
-            case SDL_JOYAXISMOTION:
-                test_ui_log(&ui, "%s joy=%d axis=%d value=%+d",
-                            sdl_event_name(event.type),
-                            event.jaxis.which, event.jaxis.axis, event.jaxis.value);
-                break;
-            case SDL_JOYBUTTONDOWN:
-            case SDL_JOYBUTTONUP:
-                test_ui_log(&ui, "%s joy=%d btn=%d state=%d",
-                            sdl_event_name(event.type),
-                            event.jbutton.which, event.jbutton.button, event.jbutton.state);
-                break;
-            case SDL_JOYHATMOTION:
-                test_ui_log(&ui, "%s joy=%d hat=%d value=%d",
-                            sdl_event_name(event.type),
-                            event.jhat.which, event.jhat.hat, event.jhat.value);
-                break;
-            case SDL_JOYBALLMOTION:
-                test_ui_log(&ui, "%s joy=%d ball=%d dx=%d dy=%d",
-                            sdl_event_name(event.type),
-                            event.jball.which, event.jball.ball,
-                            event.jball.xrel, event.jball.yrel);
-                break;
-            case SDL_JOYDEVICEADDED:
-            case SDL_JOYDEVICEREMOVED:
-                test_ui_log(&ui, "%s which=%d", sdl_event_name(event.type), event.jdevice.which);
-                break;
             case SDL_CONTROLLERDEVICEREMAPPED:
                 test_ui_log(&ui, "%s which=%d", sdl_event_name(event.type), event.cdevice.which);
                 break;

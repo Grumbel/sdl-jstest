@@ -167,18 +167,25 @@ static void draw_axis_bar(WINDOW* w, int16_t value, int bar_cols)
     waddstr(w, "│");
 }
 
-static void draw_hat(WINDOW* w, uint8_t hat)
+/* SDL_HAT_* layout (same in SDL 1/2/3):
+ *   UP=0x01  RIGHT=0x02  DOWN=0x04  LEFT=0x08  (diagonals are ORed)
+ * Drawn as a spatial d-pad so directions match the stick, not a U/D/L/R list.
+ */
+static int draw_hat(WINDOW* w, int y, int x, uint8_t hat, int max_y)
 {
-    int up = hat & 0x01;
-    int right = hat & 0x02;
-    int down = hat & 0x04;
-    int left = hat & 0x08;
+    const char* u = (hat & 0x01) ? "▲" : "·";
+    const char* r = (hat & 0x02) ? "▶" : "·";
+    const char* d = (hat & 0x04) ? "▼" : "·";
+    const char* l = (hat & 0x08) ? "◀" : "·";
+    const char* c = (hat == 0) ? "·" : "●";
 
-    wprintw(w, " U%s D%s L%s R%s  ",
-            up ? "▲" : "·",
-            down ? "▼" : "·",
-            left ? "◀" : "·",
-            right ? "▶" : "·");
+    if (y <= max_y)
+        mvwprintw(w, y, x, "  %s", u);
+    if (y + 1 <= max_y)
+        mvwprintw(w, y + 1, x, "%s %s %s", l, c, r);
+    if (y + 2 <= max_y)
+        mvwprintw(w, y + 2, x, "  %s", d);
+    return 3;
 }
 
 
@@ -299,10 +306,9 @@ void test_ui_draw_joystick(TestUI* ui,
         wattroff(w, COLOR_PAIR(3) | A_BOLD);
         for (int i = 0; i < num_hats && y < rows - 1; ++i)
         {
-            wmove(w, y, x);
-            wprintw(w, "%2d ", i);
-            draw_hat(w, hats[i]);
-            y++;
+            mvwprintw(w, y, x, "%2d", i);
+            y += draw_hat(w, y, x + 4, hats[i], rows - 2);
+            y++; /* gap between hats */
         }
         y++;
     }
