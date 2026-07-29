@@ -21,6 +21,7 @@ option(WARNINGS "Switch on extra warnings" OFF)
 option(WERROR "Turn warnings into errors" OFF)
 option(BUILD_SDL_JSTEST "Build sdl-jstest" ON)
 option(BUILD_SDL2_JSTEST "Build sdl2-jstest" ON)
+option(BUILD_SDL3_JSTEST "Build sdl3-jstest" ON)
 
 include(GNUInstallDirs)
 
@@ -103,6 +104,36 @@ if (BUILD_SDL2_JSTEST)
 
   install(FILES
     sdl2-jstest.svg
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
+endif ()
+
+if (BUILD_SDL3_JSTEST)
+  find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3)
+
+  add_executable(sdl3-jstest src/sdl3-jstest.c src/utils/dualsense.h)
+  target_link_libraries(sdl3-jstest
+    SDL3::SDL3
+    PkgConfig::NCURSES
+  )
+  target_compile_definitions(sdl3-jstest PUBLIC SDL3_JSTEST_DATADIR=\"${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}\")
+
+  file(COPY sdl3-jstest.1
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+  file(COPY external/sdl_gamecontrollerdb/gamecontrollerdb.txt
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gamecontrollerdb.txt
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME})
+
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sdl3-jstest.1
+    DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+
+  install(TARGETS sdl3-jstest
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+  install(FILES
+    sdl3-jstest.svg
     DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
 endif ()
 

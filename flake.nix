@@ -30,6 +30,11 @@
                then SDL2-win32.packages.${pkgs.stdenv.hostPlatform.system}.default
                else pkgs.SDL2;
 
+        # SDL3 win32 packaging is not wired up yet; build SDL3 only on non-Windows.
+        SDL3 = if pkgs.stdenv.hostPlatform.isWindows
+               then null
+               else pkgs.SDL3;
+
         ncurses-win32 = (pkgs.ncurses.override {
           # enableStatic = true;
         }).overrideAttrs (final: prev: {
@@ -52,55 +57,68 @@
                       else null;
 
         callSdlJstest = args: pkgs.callPackage ./sdl-jstest.nix ({
-          inherit self sdl_gamecontrollerdb SDL SDL2 ncurses mcfgthreads;
+          inherit self sdl_gamecontrollerdb SDL SDL2 SDL3 ncurses mcfgthreads;
         } // args);
 
-        # Full package: both SDL1 and SDL2 binaries
+        # Full package: SDL1 + SDL2 (+ SDL3 when available)
         sdl-jstest = callSdlJstest {
           buildSdl = true;
           buildSdl2 = true;
+          buildSdl3 = SDL3 != null;
         };
 
         # SDL 1.2 only
         sdl1-jstest = callSdlJstest {
           buildSdl = true;
           buildSdl2 = false;
+          buildSdl3 = false;
         };
 
         # SDL 2 only
         sdl2-jstest = callSdlJstest {
           buildSdl = false;
           buildSdl2 = true;
+          buildSdl3 = false;
         };
+
+        # SDL 3 only (null on Windows until SDL3-win32 is available)
+        sdl3-jstest = if SDL3 != null then callSdlJstest {
+          buildSdl = false;
+          buildSdl2 = false;
+          buildSdl3 = true;
+        } else null;
+
+        sdl-jstest-win32 = pkgs.runCommand "sdl-jstest-win32" {} ''
+          mkdir -p $out
+          mkdir -p $out/data/
+
+          cp -vr ${sdl-jstest}/bin/*.exe $out/
+          cp -vLr ${sdl-jstest}/bin/*.dll $out/
+          cp -vr ${sdl-jstest}/share/sdl-jstest/. $out/data/
+        '';
+
+        sdl-jstest-win32-zip = pkgs.runCommand "sdl-jstest-win32-zip" {} ''
+          mkdir -p $out
+          WORKDIR=$(mktemp -d)
+
+          cp --no-preserve mode,ownership --verbose --recursive \
+            ${sdl-jstest-win32}/. "$WORKDIR"
+
+          cd "$WORKDIR"
+          ${nixpkgs.legacyPackages.x86_64-linux.zip}/bin/zip \
+            -r \
+            $out/sdl-jstest-${sdl-jstest.version}-${pkgs.stdenv.hostPlatform.system}.zip \
+            .
+        '';
       in
       {
-        packages = rec {
+        packages = {
           default = sdl-jstest;
 
-          inherit ncurses-win32 sdl-jstest sdl1-jstest sdl2-jstest;
-
-          sdl-jstest-win32 = pkgs.runCommand "sdl-jstest-win32" {} ''
-            mkdir -p $out
-            mkdir -p $out/data/
-
-            cp -vr ${sdl-jstest}/bin/*.exe $out/
-            cp -vLr ${sdl-jstest}/bin/*.dll $out/
-            cp -vr ${sdl-jstest}/share/sdl-jstest/. $out/data/
-          '';
-
-          sdl-jstest-win32-zip = pkgs.runCommand "sdl-jstest-win32-zip" {} ''
-            mkdir -p $out
-            WORKDIR=$(mktemp -d)
-
-            cp --no-preserve mode,ownership --verbose --recursive \
-              ${sdl-jstest-win32}/. "$WORKDIR"
-
-            cd "$WORKDIR"
-            ${nixpkgs.legacyPackages.x86_64-linux.zip}/bin/zip \
-              -r \
-              $out/sdl-jstest-${sdl-jstest.version}-${pkgs.stdenv.hostPlatform.system}.zip \
-              .
-          '';
+          inherit ncurses-win32 sdl-jstest sdl1-jstest sdl2-jstest
+            sdl-jstest-win32 sdl-jstest-win32-zip;
+        } // pkgs.lib.optionalAttrs (sdl3-jstest != null) {
+          inherit sdl3-jstest;
         };
 
         apps = {
@@ -117,6 +135,11 @@
           sdl2-jstest = {
             type = "app";
             program = "${sdl2-jstest}/bin/sdl2-jstest";
+          };
+        } // pkgs.lib.optionalAttrs (sdl3-jstest != null) {
+          sdl3-jstest = {
+            type = "app";
+            program = "${sdl3-jstest}/bin/sdl3-jstest";
           };
         };
       }

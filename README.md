@@ -1,8 +1,8 @@
 sdl-jstest
 ==========
 
-`sdl-jstest` and `sdl2-jstest` are simple programs that lets you find
-out how many joysticks SDL or SDL2 detected on your system, how many
+`sdl-jstest`, `sdl2-jstest`, and `sdl3-jstest` are simple programs that lets you find
+out how many joysticks SDL, SDL2, or SDL3 detected on your system, how many
 axes, buttons, hats and balls they have each. They also lets you test
 the joysticks by displaying the events they send or by displaying
 their current button, axis, hat or ball state. sdl-jstest is
@@ -24,6 +24,7 @@ sdl-jstest requires the following packages to build:
 * cmake
 * libsdl1.2-dev
 * libsdl2-dev
+* libsdl3-dev
 * libncurses5-dev
 
 

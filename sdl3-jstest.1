@@ -1,0 +1,36 @@
+.Dd June 16, 2014
+.Dt SDL3-JSTEST 1
+.Os
+.Sh NAME
+.Nm sdl3-jstest
+.Nd joystick test application for SDL3
+.Sh SYNOPSIS
+.Nm sdl3-jstest
+.Op Fl Fl help
+.Op Fl Fl version
+.Op Fl Fl list
+.Op Fl Fl test Ar JOYNUM
+.Op Fl Fl gamecontroller Ar IDX
+.Op Fl Fl event Ar JOYNUM
+.Op Fl Fl rumble Ar JOYNUM
+.Sh DESCRIPTION
+.Bl -tag -width Ds
+.It Fl h , Fl Fl help
+Display help text and exit.
+.It Fl Fl version
+Display the version number and exit.
+.It Fl l , Fl Fl list
+Search for available joysticks and list their properties.
+.It Fl t Ar JOYNUM , Fl Fl test Ar JOYNUM
+Display a graphical representation of the current joystick state.
+.It Fl g Ar IDX , Fl Fl gamecontroller Ar IDX
+Test the given GameController interface.
+.It Fl e Ar JOYNUM , Fl Fl event Ar JOYNUM
+Display the events that are received from the joystick.
+.It Fl r Ar JOYNUM , Fl Fl rumble Ar JOYNUM
+.El
+.Sh SEE ALSO
+.Xr jstest 1 ,
+.Xr jstest-gtk 1 ,
+.Xr sdl-jstest 1 ,
+.Xr xboxdrv 1

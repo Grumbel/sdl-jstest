@@ -31,9 +31,16 @@ typedef struct
 static int trigger_effect = 0;
 
 /**
- * Taken from https://github.com/libsdl-org/SDL/blob/120c76c84bbce4c1bfed4e9eb74e10678bd83120/test/testgamecontroller.c#L286-L307§
+ * Taken from https://github.com/libsdl-org/SDL/blob/120c76c84bbce4c1bfed4e9eb74e10678bd83120/test/testgamecontroller.c#L286-L307
+ * Works with SDL2 (SDL_GameController) and SDL3 (SDL_Gamepad) via the
+ * DUALSENSE_GAMEPAD_TYPE / DUALSENSE_SEND_EFFECT macros.
  */
-static void CyclePS5TriggerEffect(SDL_GameController* gamepad)
+#ifndef DUALSENSE_GAMEPAD_TYPE
+#  define DUALSENSE_GAMEPAD_TYPE SDL_GameController
+#  define DUALSENSE_SEND_EFFECT  SDL_GameControllerSendEffect
+#endif
+
+static void CyclePS5TriggerEffect(DUALSENSE_GAMEPAD_TYPE* gamepad)
 {
     DS5EffectsState_t state;
 
@@ -53,5 +60,5 @@ static void CyclePS5TriggerEffect(SDL_GameController* gamepad)
     state.ucEnableBits1 |= (0x04 | 0x08); /* Modify right and left trigger effect respectively */
     SDL_memcpy(state.rgucRightTriggerEffect, effects[trigger_effect], sizeof(effects[trigger_effect]));
     SDL_memcpy(state.rgucLeftTriggerEffect, effects[trigger_effect], sizeof(effects[trigger_effect]));
-    SDL_GameControllerSendEffect(gamepad, &state, sizeof(state));
+    DUALSENSE_SEND_EFFECT(gamepad, &state, sizeof(state));
 }

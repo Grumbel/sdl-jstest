@@ -4,7 +4,7 @@ Guidance for AI agents and automated assistants working on **sdl-jstest**.
 
 ## Project overview
 
-`sdl-jstest` and `sdl2-jstest` are small C programs that list and test joysticks via SDL 1.2 and SDL 2. They show axes, buttons, hats, balls, GameController mappings, sensors, rumble, and (for DualSense) trigger effects. UI is ncurses-based. Build system is CMake; optional Nix flake support is included.
+`sdl-jstest`, `sdl2-jstest`, and `sdl3-jstest` are small C programs that list and test joysticks via SDL 1.2, SDL 2, and SDL 3. They show axes, buttons, hats, balls, GameController mappings, sensors, rumble, and (for DualSense) trigger effects. UI is ncurses-based. Build system is CMake; optional Nix flake support is included.
 
 Key paths:
 
@@ -12,6 +12,7 @@ Key paths:
 |------|------|
 | `src/sdl-jstest.c` | SDL 1.2 joystick tester |
 | `src/sdl2-jstest.c` | SDL 2 joystick / GameController tester |
+| `src/sdl3-jstest.c` | SDL 3 joystick / Gamepad tester |
 | `src/utils/dualsense.h` | DualSense (PS5) trigger-effect helpers |
 | `CMakeLists.txt` | Build and install rules |
 | `external/sdl_gamecontrollerdb/` | Submodule: GameControllerDB mappings |
