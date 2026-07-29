@@ -16,6 +16,103 @@
 #include "ui/test_ui.h"
 
 
+static const char* sdl_event_name(Uint32 type)
+{
+    switch (type)
+    {
+#define E(x) case x: return #x
+    E(SDL_EVENT_QUIT);
+    E(SDL_EVENT_TERMINATING);
+    E(SDL_EVENT_LOW_MEMORY);
+    E(SDL_EVENT_WILL_ENTER_BACKGROUND);
+    E(SDL_EVENT_DID_ENTER_BACKGROUND);
+    E(SDL_EVENT_WILL_ENTER_FOREGROUND);
+    E(SDL_EVENT_DID_ENTER_FOREGROUND);
+    E(SDL_EVENT_LOCALE_CHANGED);
+    E(SDL_EVENT_SYSTEM_THEME_CHANGED);
+    E(SDL_EVENT_DISPLAY_ORIENTATION);
+    E(SDL_EVENT_DISPLAY_ADDED);
+    E(SDL_EVENT_DISPLAY_REMOVED);
+    E(SDL_EVENT_DISPLAY_MOVED);
+    E(SDL_EVENT_WINDOW_SHOWN);
+    E(SDL_EVENT_WINDOW_HIDDEN);
+    E(SDL_EVENT_WINDOW_EXPOSED);
+    E(SDL_EVENT_WINDOW_MOVED);
+    E(SDL_EVENT_WINDOW_RESIZED);
+    E(SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED);
+    E(SDL_EVENT_WINDOW_MINIMIZED);
+    E(SDL_EVENT_WINDOW_MAXIMIZED);
+    E(SDL_EVENT_WINDOW_RESTORED);
+    E(SDL_EVENT_WINDOW_MOUSE_ENTER);
+    E(SDL_EVENT_WINDOW_MOUSE_LEAVE);
+    E(SDL_EVENT_WINDOW_FOCUS_GAINED);
+    E(SDL_EVENT_WINDOW_FOCUS_LOST);
+    E(SDL_EVENT_WINDOW_CLOSE_REQUESTED);
+    E(SDL_EVENT_KEY_DOWN);
+    E(SDL_EVENT_KEY_UP);
+    E(SDL_EVENT_TEXT_EDITING);
+    E(SDL_EVENT_TEXT_INPUT);
+    E(SDL_EVENT_KEYMAP_CHANGED);
+    E(SDL_EVENT_KEYBOARD_ADDED);
+    E(SDL_EVENT_KEYBOARD_REMOVED);
+    E(SDL_EVENT_MOUSE_MOTION);
+    E(SDL_EVENT_MOUSE_BUTTON_DOWN);
+    E(SDL_EVENT_MOUSE_BUTTON_UP);
+    E(SDL_EVENT_MOUSE_WHEEL);
+    E(SDL_EVENT_MOUSE_ADDED);
+    E(SDL_EVENT_MOUSE_REMOVED);
+    E(SDL_EVENT_JOYSTICK_AXIS_MOTION);
+    E(SDL_EVENT_JOYSTICK_BALL_MOTION);
+    E(SDL_EVENT_JOYSTICK_HAT_MOTION);
+    E(SDL_EVENT_JOYSTICK_BUTTON_DOWN);
+    E(SDL_EVENT_JOYSTICK_BUTTON_UP);
+    E(SDL_EVENT_JOYSTICK_ADDED);
+    E(SDL_EVENT_JOYSTICK_REMOVED);
+    E(SDL_EVENT_JOYSTICK_BATTERY_UPDATED);
+    E(SDL_EVENT_JOYSTICK_UPDATE_COMPLETE);
+    E(SDL_EVENT_GAMEPAD_AXIS_MOTION);
+    E(SDL_EVENT_GAMEPAD_BUTTON_DOWN);
+    E(SDL_EVENT_GAMEPAD_BUTTON_UP);
+    E(SDL_EVENT_GAMEPAD_ADDED);
+    E(SDL_EVENT_GAMEPAD_REMOVED);
+    E(SDL_EVENT_GAMEPAD_REMAPPED);
+    E(SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN);
+    E(SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION);
+    E(SDL_EVENT_GAMEPAD_TOUCHPAD_UP);
+    E(SDL_EVENT_GAMEPAD_SENSOR_UPDATE);
+    E(SDL_EVENT_FINGER_DOWN);
+    E(SDL_EVENT_FINGER_UP);
+    E(SDL_EVENT_FINGER_MOTION);
+    E(SDL_EVENT_CLIPBOARD_UPDATE);
+    E(SDL_EVENT_DROP_FILE);
+    E(SDL_EVENT_DROP_TEXT);
+    E(SDL_EVENT_DROP_BEGIN);
+    E(SDL_EVENT_DROP_COMPLETE);
+    E(SDL_EVENT_AUDIO_DEVICE_ADDED);
+    E(SDL_EVENT_AUDIO_DEVICE_REMOVED);
+    E(SDL_EVENT_SENSOR_UPDATE);
+    E(SDL_EVENT_PEN_DOWN);
+    E(SDL_EVENT_PEN_UP);
+    E(SDL_EVENT_PEN_MOTION);
+    E(SDL_EVENT_PEN_BUTTON_DOWN);
+    E(SDL_EVENT_PEN_BUTTON_UP);
+    E(SDL_EVENT_CAMERA_DEVICE_ADDED);
+    E(SDL_EVENT_CAMERA_DEVICE_REMOVED);
+    E(SDL_EVENT_RENDER_TARGETS_RESET);
+    E(SDL_EVENT_RENDER_DEVICE_RESET);
+    E(SDL_EVENT_POLL_SENTINEL);
+#undef E
+    default:
+    {
+        static char buf[48];
+        snprintf(buf, sizeof(buf), "UNKNOWN(%u)", (unsigned)type);
+        return buf;
+    }
+    }
+}
+
+
+
 /* Map a user-facing index (as in --list order) to an SDL_JoystickID. */
 static SDL_JoystickID joystick_id_at_index(int idx)
 {
@@ -248,6 +345,7 @@ static void test_joystick(int joy_idx)
 
             case SDL_EVENT_CLIPBOARD_UPDATE:
             case SDL_EVENT_KEYMAP_CHANGED:
+                test_ui_log(&ui, "%s", sdl_event_name(event.type));
                 break;
 
             case SDL_EVENT_QUIT:
@@ -256,7 +354,7 @@ static void test_joystick(int joy_idx)
                 break;
 
             default:
-                test_ui_log(&ui, "EVENT  type=%u", (unsigned)event.type);
+                test_ui_log(&ui, "%s", sdl_event_name(event.type));
                 break;
             }
         }
@@ -265,6 +363,7 @@ static void test_joystick(int joy_idx)
         {
             test_ui_draw_joystick(&ui, SDL_GetJoystickName(joy), joy_idx,
                                   axes, num_axes, buttons, num_buttons, NULL,
+                                  NULL, 0,
                                   hats, num_hats, balls, num_balls);
             test_ui_refresh(&ui);
         }
@@ -357,16 +456,50 @@ static void test_gamecontroller_state(SDL_Gamepad* gamepad)
                 }
                 break;
             case SDL_EVENT_GAMEPAD_ADDED:
-                test_ui_log(&ui, "GAMEPAD ADDED which=%d", event.gdevice.which);
+                test_ui_log(&ui, "%s which=%d", sdl_event_name(event.type), event.gdevice.which);
                 break;
             case SDL_EVENT_GAMEPAD_REMOVED:
-                test_ui_log(&ui, "GAMEPAD REMOVED which=%d", event.gdevice.which);
+                test_ui_log(&ui, "%s which=%d", sdl_event_name(event.type), event.gdevice.which);
+                break;
+            case SDL_EVENT_JOYSTICK_AXIS_MOTION:
+                test_ui_log(&ui, "%s joy=%d axis=%d value=%+d",
+                            sdl_event_name(event.type),
+                            event.jaxis.which, event.jaxis.axis, event.jaxis.value);
+                break;
+            case SDL_EVENT_JOYSTICK_BUTTON_DOWN:
+            case SDL_EVENT_JOYSTICK_BUTTON_UP:
+                test_ui_log(&ui, "%s joy=%d btn=%d down=%d",
+                            sdl_event_name(event.type),
+                            event.jbutton.which, event.jbutton.button, event.jbutton.down);
+                break;
+            case SDL_EVENT_JOYSTICK_HAT_MOTION:
+                test_ui_log(&ui, "%s joy=%d hat=%d value=%d",
+                            sdl_event_name(event.type),
+                            event.jhat.which, event.jhat.hat, event.jhat.value);
+                break;
+            case SDL_EVENT_JOYSTICK_BALL_MOTION:
+                test_ui_log(&ui, "%s joy=%d ball=%d dx=%d dy=%d",
+                            sdl_event_name(event.type),
+                            event.jball.which, event.jball.ball,
+                            event.jball.xrel, event.jball.yrel);
+                break;
+            case SDL_EVENT_JOYSTICK_ADDED:
+            case SDL_EVENT_JOYSTICK_REMOVED:
+                test_ui_log(&ui, "%s which=%d", sdl_event_name(event.type), event.jdevice.which);
+                break;
+            case SDL_EVENT_GAMEPAD_REMAPPED:
+                test_ui_log(&ui, "%s which=%d", sdl_event_name(event.type), event.gdevice.which);
+                break;
+            case SDL_EVENT_CLIPBOARD_UPDATE:
+            case SDL_EVENT_KEYMAP_CHANGED:
+            case SDL_EVENT_POLL_SENTINEL:
+                test_ui_log(&ui, "%s", sdl_event_name(event.type));
                 break;
             case SDL_EVENT_QUIT:
                 quit = 1;
                 break;
             default:
-                test_ui_log(&ui, "EVENT type=%u", (unsigned)event.type);
+                test_ui_log(&ui, "%s", sdl_event_name(event.type));
                 break;
             }
 
@@ -383,10 +516,23 @@ static void test_gamecontroller_state(SDL_Gamepad* gamepad)
 
         if (redraw || ui.dirty)
         {
-            test_ui_draw_joystick(&ui, SDL_GetGamepadName(gamepad),
-                                  SDL_GetGamepadPlayerIndex(gamepad),
-                                  axes, num_axes, buttons, num_buttons, labels,
-                                  NULL, 0, NULL, 0);
+            {
+                TestUIButtonGroup pad_groups[] = {
+                    { 0, 4 },
+                    { 4, 7 },
+                    { 7, 11 },
+                    { 11, 15 },
+                    { 15, num_buttons },
+                };
+                int ng = 5;
+                if (num_buttons <= 15)
+                    ng = 4;
+                test_ui_draw_joystick(&ui, SDL_GetGamepadName(gamepad),
+                                      SDL_GetGamepadPlayerIndex(gamepad),
+                                      axes, num_axes, buttons, num_buttons, labels,
+                                      pad_groups, ng,
+                                      NULL, 0, NULL, 0);
+            }
             test_ui_refresh(&ui);
         }
         if (test_ui_check_quit(&ui))
@@ -495,7 +641,7 @@ static void event_joystick(int joy_idx)
                 break;
 
             default:
-                fprintf(stderr, "Error: Unhandled event type: %d\n", event.type);
+                printf("%s\n", sdl_event_name(event.type));
                 break;
             }
         }

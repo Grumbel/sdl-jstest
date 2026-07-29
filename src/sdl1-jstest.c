@@ -15,6 +15,34 @@
 
 #include "ui/test_ui.h"
 
+static const char* sdl_event_name(Uint32 type)
+{
+  switch (type) {
+#define E(x) case x: return #x
+    E(SDL_QUIT);
+    E(SDL_JOYAXISMOTION);
+    E(SDL_JOYBALLMOTION);
+    E(SDL_JOYHATMOTION);
+    E(SDL_JOYBUTTONDOWN);
+    E(SDL_JOYBUTTONUP);
+    E(SDL_VIDEORESIZE);
+    E(SDL_VIDEOEXPOSE);
+    E(SDL_ACTIVEEVENT);
+    E(SDL_KEYDOWN);
+    E(SDL_KEYUP);
+    E(SDL_MOUSEMOTION);
+    E(SDL_MOUSEBUTTONDOWN);
+    E(SDL_MOUSEBUTTONUP);
+#undef E
+  default: {
+    static char buf[48];
+    snprintf(buf, sizeof(buf), "UNKNOWN(%u)", (unsigned)type);
+    return buf;
+  }
+  }
+}
+
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #define NOGDI
@@ -220,7 +248,7 @@ int main(int argc, char** argv)
                 quit = 1;
                 break;
               default:
-                test_ui_log(&ui, "EVENT  type=%u", (unsigned)event.type);
+                test_ui_log(&ui, "%s", sdl_event_name(event.type));
                 break;
             }
           }
@@ -229,6 +257,7 @@ int main(int argc, char** argv)
           {
             test_ui_draw_joystick(&ui, SDL_JoystickName(joy_idx), joy_idx,
                                   axes, num_axes, buttons, num_buttons, NULL,
+                                  NULL, 0,
                                   hats, num_hats, balls, num_balls);
             test_ui_refresh(&ui);
           }
@@ -302,7 +331,7 @@ int main(int argc, char** argv)
               break;
 
             default:
-              fprintf(stderr, "Error: Unhandled event type: %d\n", event.type);
+              printf("%s\n", sdl_event_name(event.type));
               break;
           }
         }

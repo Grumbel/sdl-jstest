@@ -14,7 +14,7 @@ static WINDOW* as_win(void* p)
     return (WINDOW*)p;
 }
 
-/* Approximate terminal columns for a UTF-8 string (●/○/─ count as 1). */
+/* Approximate terminal columns for a UTF-8 string (■/□/─ count as 1). */
 static int utf8_cols(const char* s)
 {
     int cols = 0;
@@ -181,12 +181,14 @@ static void draw_hat(WINDOW* w, uint8_t hat)
             right ? "▶" : "·");
 }
 
+
 void test_ui_draw_joystick(TestUI* ui,
                            const char* name,
                            int joy_idx,
                            const int16_t* axes, int num_axes,
                            const uint8_t* buttons, int num_buttons,
                            const char* const* button_labels,
+                           const TestUIButtonGroup* button_groups, int num_groups,
                            const uint8_t* hats, int num_hats,
                            const int16_t* balls, int num_balls)
 {
@@ -235,35 +237,59 @@ void test_ui_draw_joystick(TestUI* ui,
         mvwprintw(w, y++, x, "Buttons");
         wattroff(w, COLOR_PAIR(2) | A_BOLD);
 
-        int cx = x;
-        int cy = y;
-        for (int i = 0; i < num_buttons; ++i)
+        /* Build group list: explicit groups, or one group for all buttons */
+        TestUIButtonGroup fallback = { 0, num_buttons };
+        const TestUIButtonGroup* groups = button_groups;
+        int ng = num_groups;
+        if (!groups || ng <= 0)
         {
-            char cell[64];
-            const char* label = (button_labels && button_labels[i] && button_labels[i][0])
-                                    ? button_labels[i]
-                                    : NULL;
-            if (label)
-                snprintf(cell, sizeof(cell), "%s%s ", buttons[i] ? "●" : "○", label);
-            else
-                snprintf(cell, sizeof(cell), "%s%02d ", buttons[i] ? "●" : "○", i);
-
-            int disp_w = utf8_cols(cell);
-            if (cx + disp_w >= cols - 2)
-            {
-                cx = x;
-                cy++;
-                if (cy >= rows - 1)
-                    break;
-            }
-            if (buttons[i])
-                wattron(w, COLOR_PAIR(2) | A_BOLD);
-            mvwaddstr(w, cy, cx, cell);
-            if (buttons[i])
-                wattroff(w, COLOR_PAIR(2) | A_BOLD);
-            cx += disp_w;
+            groups = &fallback;
+            ng = 1;
         }
-        y = cy + 2;
+
+        for (int g = 0; g < ng && y < rows - 1; ++g)
+        {
+            int begin = groups[g].begin;
+            int end_i = groups[g].end;
+            if (begin < 0)
+                begin = 0;
+            if (end_i > num_buttons)
+                end_i = num_buttons;
+            if (begin >= end_i)
+                continue;
+
+            int cx = x;
+            int cy = y;
+            for (int i = begin; i < end_i; ++i)
+            {
+                char cell[64];
+                const char* mark = buttons[i] ? "■" : "□";
+                const char* label = (button_labels && button_labels[i] && button_labels[i][0])
+                                        ? button_labels[i]
+                                        : NULL;
+                if (label)
+                    snprintf(cell, sizeof(cell), " %s %s ", mark, label);
+                else
+                    snprintf(cell, sizeof(cell), " %s %02d ", mark, i);
+
+                int disp_w = utf8_cols(cell);
+                if (cx + disp_w >= cols - 2)
+                {
+                    cx = x;
+                    cy++;
+                    if (cy >= rows - 1)
+                        break;
+                }
+                if (buttons[i])
+                    wattron(w, COLOR_PAIR(2) | A_BOLD);
+                mvwaddstr(w, cy, cx, cell);
+                if (buttons[i])
+                    wattroff(w, COLOR_PAIR(2) | A_BOLD);
+                cx += disp_w;
+            }
+            y = cy + 1; /* next group on a new row */
+        }
+        y++;
     }
 
     if (num_hats > 0 && y < rows - 1)

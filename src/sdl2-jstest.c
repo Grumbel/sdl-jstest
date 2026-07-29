@@ -17,6 +17,77 @@
 #include "utils/dualsense.h"
 #include "ui/test_ui.h"
 
+
+static const char* sdl_event_name(Uint32 type)
+{
+    switch (type)
+    {
+#define E(x) case x: return #x
+    E(SDL_QUIT);
+    E(SDL_APP_TERMINATING);
+    E(SDL_APP_LOWMEMORY);
+    E(SDL_APP_WILLENTERBACKGROUND);
+    E(SDL_APP_DIDENTERBACKGROUND);
+    E(SDL_APP_WILLENTERFOREGROUND);
+    E(SDL_APP_DIDENTERFOREGROUND);
+    E(SDL_LOCALECHANGED);
+    E(SDL_DISPLAYEVENT);
+    E(SDL_WINDOWEVENT);
+    E(SDL_SYSWMEVENT);
+    E(SDL_KEYDOWN);
+    E(SDL_KEYUP);
+    E(SDL_TEXTEDITING);
+    E(SDL_TEXTINPUT);
+    E(SDL_KEYMAPCHANGED);
+    E(SDL_MOUSEMOTION);
+    E(SDL_MOUSEBUTTONDOWN);
+    E(SDL_MOUSEBUTTONUP);
+    E(SDL_MOUSEWHEEL);
+    E(SDL_JOYAXISMOTION);
+    E(SDL_JOYBALLMOTION);
+    E(SDL_JOYHATMOTION);
+    E(SDL_JOYBUTTONDOWN);
+    E(SDL_JOYBUTTONUP);
+    E(SDL_JOYDEVICEADDED);
+    E(SDL_JOYDEVICEREMOVED);
+    E(SDL_CONTROLLERAXISMOTION);
+    E(SDL_CONTROLLERBUTTONDOWN);
+    E(SDL_CONTROLLERBUTTONUP);
+    E(SDL_CONTROLLERDEVICEADDED);
+    E(SDL_CONTROLLERDEVICEREMOVED);
+    E(SDL_CONTROLLERDEVICEREMAPPED);
+    E(SDL_CONTROLLERTOUCHPADDOWN);
+    E(SDL_CONTROLLERTOUCHPADMOTION);
+    E(SDL_CONTROLLERTOUCHPADUP);
+    E(SDL_CONTROLLERSENSORUPDATE);
+    E(SDL_FINGERDOWN);
+    E(SDL_FINGERUP);
+    E(SDL_FINGERMOTION);
+    E(SDL_DOLLARGESTURE);
+    E(SDL_DOLLARRECORD);
+    E(SDL_MULTIGESTURE);
+    E(SDL_CLIPBOARDUPDATE);
+    E(SDL_DROPFILE);
+    E(SDL_DROPTEXT);
+    E(SDL_DROPBEGIN);
+    E(SDL_DROPCOMPLETE);
+    E(SDL_AUDIODEVICEADDED);
+    E(SDL_AUDIODEVICEREMOVED);
+    E(SDL_SENSORUPDATE);
+    E(SDL_RENDER_TARGETS_RESET);
+    E(SDL_RENDER_DEVICE_RESET);
+    E(SDL_POLLSENTINEL);
+#undef E
+    default:
+    {
+        static char buf[48];
+        snprintf(buf, sizeof(buf), "UNKNOWN(%u)", (unsigned)type);
+        return buf;
+    }
+    }
+}
+
+
 static int str2int(const char* str, int* val)
 {
     char* endptr;
@@ -202,16 +273,50 @@ static void test_joystick(int joy_idx)
                 test_ui_log(&ui, "DEVICE REMOVED which=%d", event.jdevice.which);
                 break;
             case SDL_CONTROLLERDEVICEADDED:
-                test_ui_log(&ui, "CONTROLLER ADDED which=%d", event.cdevice.which);
+                test_ui_log(&ui, "%s which=%d", sdl_event_name(event.type), event.cdevice.which);
                 break;
             case SDL_CONTROLLERDEVICEREMOVED:
-                test_ui_log(&ui, "CONTROLLER REMOVED which=%d", event.cdevice.which);
+                test_ui_log(&ui, "%s which=%d", sdl_event_name(event.type), event.cdevice.which);
+                break;
+            case SDL_JOYAXISMOTION:
+                test_ui_log(&ui, "%s joy=%d axis=%d value=%+d",
+                            sdl_event_name(event.type),
+                            event.jaxis.which, event.jaxis.axis, event.jaxis.value);
+                break;
+            case SDL_JOYBUTTONDOWN:
+            case SDL_JOYBUTTONUP:
+                test_ui_log(&ui, "%s joy=%d btn=%d state=%d",
+                            sdl_event_name(event.type),
+                            event.jbutton.which, event.jbutton.button, event.jbutton.state);
+                break;
+            case SDL_JOYHATMOTION:
+                test_ui_log(&ui, "%s joy=%d hat=%d value=%d",
+                            sdl_event_name(event.type),
+                            event.jhat.which, event.jhat.hat, event.jhat.value);
+                break;
+            case SDL_JOYBALLMOTION:
+                test_ui_log(&ui, "%s joy=%d ball=%d dx=%d dy=%d",
+                            sdl_event_name(event.type),
+                            event.jball.which, event.jball.ball,
+                            event.jball.xrel, event.jball.yrel);
+                break;
+            case SDL_JOYDEVICEADDED:
+            case SDL_JOYDEVICEREMOVED:
+                test_ui_log(&ui, "%s which=%d", sdl_event_name(event.type), event.jdevice.which);
+                break;
+            case SDL_CONTROLLERDEVICEREMAPPED:
+                test_ui_log(&ui, "%s which=%d", sdl_event_name(event.type), event.cdevice.which);
+                break;
+            case SDL_CLIPBOARDUPDATE:
+            case SDL_KEYMAPCHANGED:
+            case SDL_POLLSENTINEL:
+                test_ui_log(&ui, "%s", sdl_event_name(event.type));
                 break;
             case SDL_QUIT:
                 quit = 1;
                 break;
             default:
-                test_ui_log(&ui, "EVENT  type=%u", (unsigned)event.type);
+                test_ui_log(&ui, "%s", sdl_event_name(event.type));
                 break;
             }
         }
@@ -219,6 +324,7 @@ static void test_joystick(int joy_idx)
         {
             test_ui_draw_joystick(&ui, SDL_JoystickName(joy), joy_idx,
                                   axes, num_axes, buttons, num_buttons, NULL,
+                                  NULL, 0,
                                   hats, num_hats, balls, num_balls);
             test_ui_refresh(&ui);
         }
@@ -308,7 +414,7 @@ static void test_gamecontroller_state(SDL_GameController* gamepad)
                 }
                 break;
             case SDL_CONTROLLERDEVICEADDED:
-                test_ui_log(&ui, "CONTROLLER ADDED which=%d", event.cdevice.which);
+                test_ui_log(&ui, "%s which=%d", sdl_event_name(event.type), event.cdevice.which);
                 break;
             case SDL_CONTROLLERDEVICEREMOVED:
                 test_ui_log(&ui, "CONTROLLER REMOVED which=%d", event.cdevice.which);
@@ -317,7 +423,7 @@ static void test_gamecontroller_state(SDL_GameController* gamepad)
                 quit = 1;
                 break;
             default:
-                test_ui_log(&ui, "EVENT type=%u", (unsigned)event.type);
+                test_ui_log(&ui, "%s", sdl_event_name(event.type));
                 break;
             }
             if (trigger_effect == 0)
@@ -329,10 +435,23 @@ static void test_gamecontroller_state(SDL_GameController* gamepad)
         }
         if (redraw || ui.dirty)
         {
-            test_ui_draw_joystick(&ui, SDL_GameControllerName(gamepad),
-                                  SDL_GameControllerGetPlayerIndex(gamepad),
-                                  axes, num_axes, buttons, num_buttons, labels,
-                                  NULL, 0, NULL, 0);
+            {
+                TestUIButtonGroup pad_groups[] = {
+                    { 0, 4 },
+                    { 4, 7 },
+                    { 7, 11 },
+                    { 11, 15 },
+                    { 15, num_buttons },
+                };
+                int ng = 5;
+                if (num_buttons <= 15)
+                    ng = 4;
+                test_ui_draw_joystick(&ui, SDL_GameControllerName(gamepad),
+                                      SDL_GameControllerGetPlayerIndex(gamepad),
+                                      axes, num_axes, buttons, num_buttons, labels,
+                                      pad_groups, ng,
+                                      NULL, 0, NULL, 0);
+            }
             test_ui_refresh(&ui);
         }
         if (test_ui_check_quit(&ui))
@@ -438,7 +557,7 @@ static void event_joystick(int joy_idx)
                 break;
 
             default:
-                fprintf(stderr, "Error: Unhandled event type: %d\n", event.type);
+                printf("%s\n", sdl_event_name(event.type));
                 break;
             }
         }

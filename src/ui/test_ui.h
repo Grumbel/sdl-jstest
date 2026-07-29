@@ -24,16 +24,16 @@ typedef struct TestUI {
     bool dirty;
 } TestUI;
 
-/** Initialize locale, ncurses, and split panes. */
+/** Inclusive start / exclusive end button index range for a visual group. */
+typedef struct TestUIButtonGroup {
+    int begin;
+    int end;
+} TestUIButtonGroup;
+
 void test_ui_init(TestUI* ui);
-
-/** Tear down ncurses. */
 void test_ui_shutdown(TestUI* ui);
-
-/** Recreate panes after terminal resize. */
 void test_ui_relayout(TestUI* ui);
 
-/** Append a line to the bottom event log (printf-style). */
 void test_ui_log(TestUI* ui, const char* fmt, ...)
 #if defined(__GNUC__)
     __attribute__((format(printf, 2, 3)))
@@ -41,8 +41,9 @@ void test_ui_log(TestUI* ui, const char* fmt, ...)
     ;
 
 /**
- * Draw the top status pane: identity, axes, wrapping buttons, hats, balls.
- * @param button_labels optional; if non-NULL, length num_buttons (may be NULL entries)
+ * Draw the top status pane: identity, axes, buttons, hats, balls.
+ * @param button_labels optional per-button names (may be NULL)
+ * @param button_groups optional layout groups; when NULL all buttons flow-wrap
  */
 void test_ui_draw_joystick(TestUI* ui,
                            const char* name,
@@ -50,16 +51,12 @@ void test_ui_draw_joystick(TestUI* ui,
                            const int16_t* axes, int num_axes,
                            const uint8_t* buttons, int num_buttons,
                            const char* const* button_labels,
+                           const TestUIButtonGroup* button_groups, int num_groups,
                            const uint8_t* hats, int num_hats,
                            const int16_t* balls, int num_balls);
 
-/** Redraw event log pane from the ring buffer. */
 void test_ui_draw_events(TestUI* ui);
-
-/** Refresh both panes. */
 void test_ui_refresh(TestUI* ui);
-
-/** Non-blocking: true if Ctrl-C was pressed. */
 bool test_ui_check_quit(TestUI* ui);
 
 #ifdef __cplusplus
