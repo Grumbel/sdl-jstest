@@ -81,6 +81,13 @@ static const char* sdl_event_name(Uint32 type)
     E(SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION);
     E(SDL_EVENT_GAMEPAD_TOUCHPAD_UP);
     E(SDL_EVENT_GAMEPAD_SENSOR_UPDATE);
+    E(SDL_EVENT_GAMEPAD_UPDATE_COMPLETE);
+    E(SDL_EVENT_GAMEPAD_STEAM_HANDLE_UPDATED);
+    E(SDL_EVENT_GAMEPAD_TOUCHPAD_DOWN);
+    E(SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION);
+    E(SDL_EVENT_GAMEPAD_TOUCHPAD_UP);
+    E(SDL_EVENT_JOYSTICK_BATTERY_UPDATED);
+    E(SDL_EVENT_JOYSTICK_UPDATE_COMPLETE);
     E(SDL_EVENT_FINGER_DOWN);
     E(SDL_EVENT_FINGER_UP);
     E(SDL_EVENT_FINGER_MOTION);
@@ -281,6 +288,8 @@ static void test_joystick(int joy_idx)
     for (int i = 0; i < num_hats; ++i)
         hats[i] = SDL_GetJoystickHat(joy, i);
 
+    SDL_JoystickID open_iid = id;
+
     TestUI ui;
     test_ui_init(&ui);
     test_ui_log(&ui, "Opened joystick %d id=%u '%s'", joy_idx, (unsigned)id,
@@ -336,7 +345,14 @@ static void test_joystick(int joy_idx)
                 break;
 
             case SDL_EVENT_JOYSTICK_REMOVED:
-                test_ui_log(&ui, "DEVICE REMOVED which=%d", event.jdevice.which);
+                test_ui_log(&ui, "*** DISCONNECTED *** %s which=%d%s",
+                            sdl_event_name(event.type), event.jdevice.which,
+                            event.jdevice.which == open_iid ? " (this device)" : "");
+                if (event.jdevice.which == open_iid)
+                {
+                    test_ui_log(&ui, "*** Device unplugged — back to menu ***");
+                    quit = 1;
+                }
                 break;
 
             case SDL_EVENT_GAMEPAD_ADDED:
@@ -437,9 +453,13 @@ static void test_gamecontroller_state(SDL_Gamepad* gamepad)
     for (int i = 0; i < num_buttons; ++i)
         buttons[i] = SDL_GetGamepadButton(gamepad, (SDL_GamepadButton)i) ? 1 : 0;
 
+    SDL_Joystick* joy_ref = SDL_GetGamepadJoystick(gamepad);
+    SDL_JoystickID open_iid = joy_ref ? SDL_GetJoystickID(joy_ref) : 0;
+
     TestUI ui;
     test_ui_init(&ui);
-    test_ui_log(&ui, "Gamepad '%s'", SDL_GetGamepadName(gamepad));
+    test_ui_log(&ui, "Gamepad '%s' (id %u)",
+                SDL_GetGamepadName(gamepad), (unsigned)open_iid);
 
     int quit = 0;
     SDL_Event event;
@@ -485,7 +505,14 @@ static void test_gamecontroller_state(SDL_Gamepad* gamepad)
                 test_ui_log(&ui, "%s which=%d", sdl_event_name(event.type), event.gdevice.which);
                 break;
             case SDL_EVENT_GAMEPAD_REMOVED:
-                test_ui_log(&ui, "%s which=%d", sdl_event_name(event.type), event.gdevice.which);
+                test_ui_log(&ui, "*** DISCONNECTED *** %s which=%d%s",
+                            sdl_event_name(event.type), event.gdevice.which,
+                            event.gdevice.which == open_iid ? " (this device)" : "");
+                if (event.gdevice.which == open_iid)
+                {
+                    test_ui_log(&ui, "*** Controller unplugged — back to menu ***");
+                    quit = 1;
+                }
                 break;
             case SDL_EVENT_JOYSTICK_AXIS_MOTION:
                 test_ui_log(&ui, "%s joy=%d axis=%d value=%+d",
@@ -510,8 +537,17 @@ static void test_gamecontroller_state(SDL_Gamepad* gamepad)
                             event.jball.xrel, event.jball.yrel);
                 break;
             case SDL_EVENT_JOYSTICK_ADDED:
-            case SDL_EVENT_JOYSTICK_REMOVED:
                 test_ui_log(&ui, "%s which=%d", sdl_event_name(event.type), event.jdevice.which);
+                break;
+            case SDL_EVENT_JOYSTICK_REMOVED:
+                test_ui_log(&ui, "*** DISCONNECTED *** %s which=%d%s",
+                            sdl_event_name(event.type), event.jdevice.which,
+                            event.jdevice.which == open_iid ? " (this device)" : "");
+                if (event.jdevice.which == open_iid)
+                {
+                    test_ui_log(&ui, "*** Device unplugged — back to menu ***");
+                    quit = 1;
+                }
                 break;
             case SDL_EVENT_GAMEPAD_REMAPPED:
                 test_ui_log(&ui, "%s which=%d", sdl_event_name(event.type), event.gdevice.which);

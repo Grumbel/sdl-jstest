@@ -7,6 +7,7 @@
 #include <locale.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static WINDOW* as_win(void* p)
@@ -53,7 +54,12 @@ void test_ui_init(TestUI* ui)
 {
     memset(ui, 0, sizeof(*ui));
     setlocale(LC_ALL, "");
+    /* Make lone Esc register quickly (keypad otherwise waits for sequences). */
+    setenv("ESCDELAY", "25", 1);
     initscr();
+#ifdef NCURSES_VERSION
+    set_escdelay(25);
+#endif
     noecho();
     nodelay(stdscr, TRUE);
     curs_set(0);
@@ -332,7 +338,7 @@ void test_ui_draw_joystick(TestUI* ui,
     }
 
     if (rows > 1)
-        mvwprintw(w, rows - 1, x, "Esc: back to menu  ·  Ctrl-C: exit");
+        mvwprintw(w, rows - 1, x, "Esc/q: menu  ·  Ctrl-C: exit");
 done:
     wnoutrefresh(w);
 }
@@ -390,7 +396,7 @@ TestUIAction test_ui_poll_action(TestUI* ui)
     {
         if (ch == 3) /* Ctrl-C */
             action = TEST_UI_QUIT;
-        else if (ch == 27) /* Esc */
+        else if (ch == 27 || ch == 'q' || ch == 'Q') /* Esc / q: back to menu */
             action = TEST_UI_BACK;
         else if (ch == KEY_RESIZE)
             test_ui_relayout(ui);
@@ -423,7 +429,7 @@ int test_ui_menu_select(TestUI* ui, const char* title,
         wattron(w, COLOR_PAIR(1) | A_BOLD);
         mvwprintw(w, y++, x, "%s", title ? title : "Select device");
         wattroff(w, COLOR_PAIR(1) | A_BOLD);
-        mvwprintw(w, y++, x, "↑/↓ or j/k  ·  Enter select  ·  Esc quit");
+        mvwprintw(w, y++, x, "↑/↓ j/k  ·  Enter  ·  Esc/q quit");
         y++;
 
         if (n_items == 0)
@@ -488,7 +494,7 @@ int test_ui_menu_select(TestUI* ui, const char* title,
         }
         if (ch == 3) /* Ctrl-C */
             return -1;
-        if (ch == 27) /* Esc */
+        if (ch == 27 || ch == 'q' || ch == 'Q') /* Esc / q */
             return -1;
         if (ch == KEY_UP || ch == 'k' || ch == 'K')
         {

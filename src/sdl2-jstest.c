@@ -222,7 +222,8 @@ static void test_joystick(int joy_idx)
     Uint8* hats = calloc((size_t)num_hats, sizeof(Uint8));
     Sint16* balls = calloc((size_t)num_balls, 2 * sizeof(Sint16));
 
-    TestUI ui;
+    SDL_JoystickID open_iid = SDL_JoystickInstanceID(joy);
+
     /* Seed current axis/button/hat state for the first paint */
     for (int i = 0; i < num_axes; ++i)
         axes[i] = SDL_JoystickGetAxis(joy, i);
@@ -231,9 +232,11 @@ static void test_joystick(int joy_idx)
     for (int i = 0; i < num_hats; ++i)
         hats[i] = SDL_JoystickGetHat(joy, i);
 
+    TestUI ui;
     test_ui_init(&ui);
-    test_ui_log(&ui, "Opened joystick %d '%s'", joy_idx,
-                SDL_JoystickName(joy) ? SDL_JoystickName(joy) : "?");
+    test_ui_log(&ui, "Opened joystick %d '%s' (instance %d)", joy_idx,
+                SDL_JoystickName(joy) ? SDL_JoystickName(joy) : "?",
+                (int)open_iid);
 
     int quit = 0;
     SDL_Event event;
@@ -282,7 +285,14 @@ static void test_joystick(int joy_idx)
                 test_ui_log(&ui, "DEVICE ADDED   which=%d", event.jdevice.which);
                 break;
             case SDL_JOYDEVICEREMOVED:
-                test_ui_log(&ui, "DEVICE REMOVED which=%d", event.jdevice.which);
+                test_ui_log(&ui, "*** DISCONNECTED *** %s which=%d%s",
+                            sdl_event_name(event.type), event.jdevice.which,
+                            event.jdevice.which == open_iid ? " (this device)" : "");
+                if (event.jdevice.which == open_iid)
+                {
+                    test_ui_log(&ui, "*** Device unplugged — back to menu ***");
+                    quit = 1;
+                }
                 break;
             case SDL_CONTROLLERDEVICEADDED:
                 test_ui_log(&ui, "%s which=%d", sdl_event_name(event.type), event.cdevice.which);
@@ -368,9 +378,13 @@ static void test_gamecontroller_state(SDL_GameController* gamepad)
     for (int i = 0; i < num_buttons; ++i)
         buttons[i] = SDL_GameControllerGetButton(gamepad, i) ? 1 : 0;
 
+    SDL_Joystick* joy_ref = SDL_GameControllerGetJoystick(gamepad);
+    SDL_JoystickID open_iid = joy_ref ? SDL_JoystickInstanceID(joy_ref) : -1;
+
     TestUI ui;
     test_ui_init(&ui);
-    test_ui_log(&ui, "GameController '%s'", SDL_GameControllerName(gamepad));
+    test_ui_log(&ui, "GameController '%s' (instance %d)",
+                SDL_GameControllerName(gamepad), (int)open_iid);
 
     int quit = 0;
     SDL_Event event;
@@ -413,9 +427,18 @@ static void test_gamecontroller_state(SDL_GameController* gamepad)
                 }
                 break;
             case SDL_CONTROLLERDEVICEADDED:
-            case SDL_CONTROLLERDEVICEREMOVED:
             case SDL_CONTROLLERDEVICEREMAPPED:
                 test_ui_log(&ui, "%s which=%d", sdl_event_name(event.type), event.cdevice.which);
+                break;
+            case SDL_CONTROLLERDEVICEREMOVED:
+                test_ui_log(&ui, "*** DISCONNECTED *** %s which=%d%s",
+                            sdl_event_name(event.type), event.cdevice.which,
+                            event.cdevice.which == open_iid ? " (this device)" : "");
+                if (event.cdevice.which == open_iid)
+                {
+                    test_ui_log(&ui, "*** Controller unplugged — back to menu ***");
+                    quit = 1;
+                }
                 break;
             case SDL_JOYAXISMOTION:
                 test_ui_log(&ui, "%s which=%d axis=%d value=%+d",
@@ -440,8 +463,17 @@ static void test_gamecontroller_state(SDL_GameController* gamepad)
                             event.jball.xrel, event.jball.yrel);
                 break;
             case SDL_JOYDEVICEADDED:
-            case SDL_JOYDEVICEREMOVED:
                 test_ui_log(&ui, "%s which=%d", sdl_event_name(event.type), event.jdevice.which);
+                break;
+            case SDL_JOYDEVICEREMOVED:
+                test_ui_log(&ui, "*** DISCONNECTED *** %s which=%d%s",
+                            sdl_event_name(event.type), event.jdevice.which,
+                            event.jdevice.which == open_iid ? " (this device)" : "");
+                if (event.jdevice.which == open_iid)
+                {
+                    test_ui_log(&ui, "*** Device unplugged — back to menu ***");
+                    quit = 1;
+                }
                 break;
             case SDL_CLIPBOARDUPDATE:
             case SDL_KEYMAPCHANGED:
