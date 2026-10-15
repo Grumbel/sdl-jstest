@@ -7,14 +7,23 @@
 #include <stdlib.h>
 #include <string.h>
 
-enum {
-    COL_BG=0xFF1A1A2E, COL_PANEL=0xFF16213E, COL_BORDER=0xFF0F3460,
-    COL_TEXT=0xFFE8E8E8, COL_DIM=0xFF888899, COL_CYAN=0xFF4ECDC4,
-    COL_GREEN=0xFF2ECC71, COL_YELLOW=0xFFF1C40F, COL_BAR_BG=0xFF2A2A3E,
-    COL_BAR_FILL=0xFF3498DB, COL_BAR_MID=0xFF7F8C8D, COL_BTN_OFF=0xFF3D3D5C,
-    COL_BTN_ON=0xFF27AE60, COL_SEL_BG=0xFF4A90D9, COL_HAT_ON=0xFFF39C12,
-    COL_HAT_OFF=0xFF555566
-};
+/* ARGB8888 colours — static const, not enum (values exceed signed int range). */
+static const uint32_t COL_BG       = 0xFF1A1A2Eu;
+static const uint32_t COL_PANEL    = 0xFF16213Eu;
+static const uint32_t COL_BORDER   = 0xFF0F3460u;
+static const uint32_t COL_TEXT     = 0xFFE8E8E8u;
+static const uint32_t COL_DIM      = 0xFF888899u;
+static const uint32_t COL_CYAN     = 0xFF4ECDC4u;
+static const uint32_t COL_GREEN    = 0xFF2ECC71u;
+static const uint32_t COL_YELLOW   = 0xFFF1C40Fu;
+static const uint32_t COL_BAR_BG   = 0xFF2A2A3Eu;
+static const uint32_t COL_BAR_FILL = 0xFF3498DBu;
+static const uint32_t COL_BAR_MID  = 0xFF7F8C8Du;
+static const uint32_t COL_BTN_OFF  = 0xFF3D3D5Cu;
+static const uint32_t COL_BTN_ON   = 0xFF27AE60u;
+static const uint32_t COL_SEL_BG   = 0xFF4A90D9u;
+static const uint32_t COL_HAT_ON   = 0xFFF39C12u;
+static const uint32_t COL_HAT_OFF  = 0xFF555566u;
 
 static const uint8_t font8x8_basic[95][8] = {
     {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
@@ -334,7 +343,7 @@ void graph_ui_draw_joystick(GraphUI* ui, const char* name, int joy_idx,
         y += 14;
         int hx = x;
         for (int i = 0; i < num_hats && y + 50 < max_y; ++i) {
-            char lab[8];
+            char lab[16];
             snprintf(lab, sizeof(lab), "%d", i);
             draw_text(ui, hx, y, lab, COL_DIM);
             draw_hat(ui, hx + 16, y, hats[i]);
