@@ -15,7 +15,52 @@
 #define DUALSENSE_SEND_EFFECT  SDL_SendGamepadEffect
 #include "utils/dualsense.h"
 #include "ui/test_ui.h"
+#include "ui/graph_ui.h"
+#include <stdint.h>
 
+
+
+typedef struct GraphPresent3 {
+    SDL_Window* win; SDL_Renderer* ren; SDL_Texture* tex; GraphUI ui;
+} GraphPresent3;
+static int graph_present3_open(GraphPresent3* gp, const char* title)
+{
+    memset(gp, 0, sizeof(*gp));
+    if (!graph_ui_init(&gp->ui, GRAPH_UI_DEFAULT_W, GRAPH_UI_DEFAULT_H)) return 0;
+    gp->win = SDL_CreateWindow(title ? title : "sdl3-jstest", gp->ui.w, gp->ui.h, SDL_WINDOW_RESIZABLE);
+    if (!gp->win) { fprintf(stderr, "SDL_CreateWindow: %s\n", SDL_GetError()); graph_ui_shutdown(&gp->ui); return 0; }
+    gp->ren = SDL_CreateRenderer(gp->win, NULL);
+    if (!gp->ren) { fprintf(stderr, "SDL_CreateRenderer: %s\n", SDL_GetError()); SDL_DestroyWindow(gp->win); graph_ui_shutdown(&gp->ui); return 0; }
+    gp->tex = SDL_CreateTexture(gp->ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, gp->ui.w, gp->ui.h);
+    if (!gp->tex) { fprintf(stderr, "SDL_CreateTexture: %s\n", SDL_GetError()); SDL_DestroyRenderer(gp->ren); SDL_DestroyWindow(gp->win); graph_ui_shutdown(&gp->ui); return 0; }
+    return 1;
+}
+static void graph_present3_frame(GraphPresent3* gp)
+{
+    SDL_UpdateTexture(gp->tex, NULL, gp->ui.pixels, gp->ui.w * (int)sizeof(uint32_t));
+    SDL_RenderClear(gp->ren); SDL_RenderTexture(gp->ren, gp->tex, NULL, NULL); SDL_RenderPresent(gp->ren);
+}
+static void graph_present3_close(GraphPresent3* gp)
+{
+    if (gp->tex) SDL_DestroyTexture(gp->tex);
+    if (gp->ren) SDL_DestroyRenderer(gp->ren);
+    if (gp->win) SDL_DestroyWindow(gp->win);
+    graph_ui_shutdown(&gp->ui); memset(gp, 0, sizeof(*gp));
+}
+static int graph_present3_map_key(const SDL_Event* e, int* mk, TestUIAction* act)
+{
+    if (e->type != SDL_EVENT_KEY_DOWN) return 0;
+    SDL_Keycode k = e->key.key;
+    if (k == SDLK_ESCAPE || k == SDLK_Q) { if (act) *act = TEST_UI_BACK; if (mk) *mk = 27; return 1; }
+    if (k == SDLK_C && (e->key.mod & SDL_KMOD_CTRL)) { if (act) *act = TEST_UI_QUIT; if (mk) *mk = 27; return 1; }
+    if (!mk) return 0;
+    if (k == SDLK_UP || k == SDLK_K) *mk = GRAPH_UI_KEY_UP;
+    else if (k == SDLK_DOWN || k == SDLK_J) *mk = GRAPH_UI_KEY_DOWN;
+    else if (k == SDLK_RETURN || k == SDLK_KP_ENTER || k == SDLK_SPACE) *mk = '\n';
+    else if (k >= SDLK_0 && k <= SDLK_9) *mk = '0' + (int)(k - SDLK_0);
+    else return 0;
+    return 1;
+}
 
 static const char* sdl_event_name(Uint32 type)
 {
@@ -207,7 +252,8 @@ static void print_help(const char* prg)
     printf("  -h, --help             Print this help\n");
     printf("  --version              Print version number and exit\n");
     printf("  -l, --list             Search for available joysticks and list their properties\n");
-    printf("  -t, --test JOYNUM      Display a graphical representation of the current joystick state\n");
+    printf("  -t, --test JOYNUM      Terminal (ncurses) joystick state display\n");
+    printf("  -G, --gui [JOYNUM]     SDL window joystick test (omit JOYNUM for menu)\n");
     printf("  -g, --gamecontroller IDX\n"
         "                         Test GameController\n");
     printf("  -e, --event JOYNUM     Display the events that are received from the joystick\n");
@@ -216,6 +262,8 @@ static void print_help(const char* prg)
     printf("Examples:\n");
     printf("  %s --list\n", prg);
     printf("  %s --test 1\n", prg);
+    printf("  %s --gui\n", prg);
+    printf("  %s --gui 0\n", prg);
 }
 
 static void list_joysticks(void)
@@ -737,6 +785,137 @@ static void test_rumble(int joy_idx)
 }
 
 
+
+static void gui_test_joystick(int joy_idx)
+{
+    SDL_JoystickID id = joystick_id_at_index(joy_idx);
+    SDL_Joystick* joy = SDL_OpenJoystick(id);
+    if (!joy) { fprintf(stderr, "Unable to open joystick %d\n", joy_idx); return; }
+    int num_axes = SDL_GetNumJoystickAxes(joy);
+    int num_buttons = SDL_GetNumJoystickButtons(joy);
+    int num_hats = SDL_GetNumJoystickHats(joy);
+    int num_balls = SDL_GetNumJoystickBalls(joy);
+    if (num_axes < 0 || num_buttons < 0 || num_hats < 0 || num_balls < 0) {
+        fprintf(stderr, "Unable to query joystick layout: %s\n", SDL_GetError());
+        SDL_CloseJoystick(joy); return;
+    }
+    Sint16* axes = calloc((size_t)num_axes, sizeof(Sint16));
+    Uint8* buttons = calloc((size_t)num_buttons, sizeof(Uint8));
+    Uint8* hats = calloc((size_t)num_hats, sizeof(Uint8));
+    Sint16* balls = calloc((size_t)num_balls, 2 * sizeof(Sint16));
+    for (int i = 0; i < num_axes; ++i) axes[i] = SDL_GetJoystickAxis(joy, i);
+    for (int i = 0; i < num_buttons; ++i) buttons[i] = SDL_GetJoystickButton(joy, i) ? 1 : 0;
+    for (int i = 0; i < num_hats; ++i) hats[i] = SDL_GetJoystickHat(joy, i);
+    SDL_JoystickID open_iid = id;
+
+    GraphPresent3 gp;
+    char title[128];
+    snprintf(title, sizeof(title), "sdl3-jstest — %s",
+             SDL_GetJoystickName(joy) ? SDL_GetJoystickName(joy) : "joystick");
+    if (!graph_present3_open(&gp, title)) {
+        free(balls); free(hats); free(buttons); free(axes); SDL_CloseJoystick(joy); return;
+    }
+    graph_ui_log(&gp.ui, "Opened joystick %d id=%u '%s'", joy_idx, (unsigned)id,
+                 SDL_GetJoystickName(joy) ? SDL_GetJoystickName(joy) : "?");
+
+    int quit = 0;
+    SDL_Event event;
+    while (!quit) {
+        SDL_Delay(10);
+        while (SDL_PollEvent(&event)) {
+            TestUIAction act = TEST_UI_CONTINUE;
+            if (graph_present3_map_key(&event, NULL, &act)) {
+                if (act == TEST_UI_BACK || act == TEST_UI_QUIT) quit = 1;
+                continue;
+            }
+            switch (event.type) {
+            case SDL_EVENT_JOYSTICK_AXIS_MOTION:
+                if (event.jaxis.axis < num_axes) axes[event.jaxis.axis] = event.jaxis.value;
+                graph_ui_log(&gp.ui, "%s axis=%d value=%+d", sdl_event_name(event.type),
+                    event.jaxis.axis, event.jaxis.value);
+                break;
+            case SDL_EVENT_JOYSTICK_BUTTON_DOWN:
+            case SDL_EVENT_JOYSTICK_BUTTON_UP:
+                if (event.jbutton.button < num_buttons)
+                    buttons[event.jbutton.button] = event.jbutton.down ? 1 : 0;
+                graph_ui_log(&gp.ui, "%s button=%d %s", sdl_event_name(event.type),
+                    event.jbutton.button, event.jbutton.down ? "DOWN" : "UP");
+                break;
+            case SDL_EVENT_JOYSTICK_HAT_MOTION:
+                if (event.jhat.hat < num_hats) hats[event.jhat.hat] = event.jhat.value;
+                graph_ui_log(&gp.ui, "HAT hat=%d value=%d", event.jhat.hat, event.jhat.value);
+                break;
+            case SDL_EVENT_JOYSTICK_BALL_MOTION:
+                if (event.jball.ball < num_balls) {
+                    balls[2*event.jball.ball]=event.jball.xrel;
+                    balls[2*event.jball.ball+1]=event.jball.yrel;
+                }
+                break;
+            case SDL_EVENT_JOYSTICK_REMOVED:
+                if (event.jdevice.which == open_iid) quit = 1;
+                break;
+            case SDL_EVENT_QUIT:
+                quit = 1;
+                break;
+            default: break;
+            }
+        }
+        graph_ui_draw_joystick(&gp.ui, SDL_GetJoystickName(joy), joy_idx,
+            axes, num_axes, buttons, num_buttons, NULL, NULL, 0,
+            hats, num_hats, balls, num_balls);
+        graph_present3_frame(&gp);
+    }
+    graph_present3_close(&gp);
+    free(balls); free(hats); free(buttons); free(axes);
+    SDL_CloseJoystick(joy);
+}
+
+static int gui_interactive_menu(void)
+{
+    for (;;) {
+        int njoy = 0;
+        SDL_JoystickID* ids = SDL_GetJoysticks(&njoy);
+        char** labels = calloc((size_t)(njoy > 0 ? njoy : 1), sizeof(char*));
+        for (int i = 0; i < njoy; ++i) {
+            char buf[256];
+            const char* name = SDL_GetJoystickNameForID(ids[i]);
+            bool gc = SDL_IsGamepad(ids[i]);
+            snprintf(buf, sizeof(buf), "%s  %s", gc ? "[pad]" : "[joy]", name ? name : "(unknown)");
+            labels[i] = malloc(strlen(buf)+1);
+            if (labels[i]) memcpy(labels[i], buf, strlen(buf)+1);
+        }
+        GraphPresent3 gp;
+        if (!graph_present3_open(&gp, "sdl3-jstest — select device")) {
+            for (int i = 0; i < njoy; ++i) free(labels[i]);
+            free(labels); if (ids) SDL_free(ids); return 1;
+        }
+        gp.ui.menu_selected = 0;
+        int sel = -1, done = 0;
+        while (!done) {
+            graph_ui_draw_menu(&gp.ui, "Select joystick / gamepad",
+                               (const char* const*)labels, njoy);
+            graph_present3_frame(&gp);
+            SDL_Event event;
+            while (SDL_PollEvent(&event)) {
+                int mkey = 0;
+                if (event.type == SDL_EVENT_QUIT) { sel = -1; done = 1; break; }
+                if (graph_present3_map_key(&event, &mkey, NULL)) {
+                    int r = graph_ui_menu_key(&gp.ui, mkey, njoy);
+                    if (r == -1) { sel = -1; done = 1; }
+                    else if (r >= 0) { sel = r; done = 1; }
+                }
+            }
+            SDL_Delay(16);
+        }
+        graph_present3_close(&gp);
+        for (int i = 0; i < njoy; ++i) free(labels[i]);
+        free(labels);
+        if (ids) SDL_free(ids);
+        if (sel < 0) return 0;
+        gui_test_joystick(sel);
+    }
+}
+
 static int interactive_menu(void)
 {
     for (;;)
@@ -883,6 +1062,20 @@ int main(int argc, char** argv)
             else
             {
                 test_rumble(idx);
+            }
+        }
+        else if ((argc == 2 || argc == 3) &&
+                 (strcmp(argv[1], "--gui") == 0 || strcmp(argv[1], "-G") == 0))
+        {
+            if (argc == 2)
+                gui_interactive_menu();
+            else {
+                int joy_idx;
+                if (!str2int(argv[2], &joy_idx)) {
+                    fprintf(stderr, "Error: JOYSTICKNUM argument must be a number, but was '%s'\n", argv[2]);
+                    exit(1);
+                }
+                gui_test_joystick(joy_idx);
             }
         }
         else
