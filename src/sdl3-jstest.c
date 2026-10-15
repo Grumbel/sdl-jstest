@@ -1004,6 +1004,7 @@ int main(int argc, char** argv)
     else
     {
         atexit(SDL_Quit);
+        app_install_quit_handlers();
 
         {
             int ret = SDL_AddGamepadMappingsFromFile(SDL3_JSTEST_DATADIR "/gamecontrollerdb.txt");
