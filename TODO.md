@@ -5,6 +5,7 @@ Work line base: `cf4fab3`
 Current tip: see `git log -1`
 
 ## Done this session
+- Fixed graph_ui -Wpedantic/-Wformat-truncation for Nix -Werror builds
 Optional SDL window joystick test (`-G` / `--gui [JOYNUM]`) for all three binaries.
 
 ### Shared
