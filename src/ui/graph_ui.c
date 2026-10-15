@@ -379,7 +379,7 @@ void graph_ui_draw_joystick(GraphUI* ui, const char* name, int joy_idx,
     }
 
     if (status_h - 14 > y)
-        draw_text(ui, x, status_h - 14, "Esc/q: menu   Ctrl-C / close window: exit", COL_DIM);
+        draw_text(ui, x, status_h - 14, "Esc/q: menu   Ctrl-C or close window: exit app", COL_DIM);
     draw_event_log(ui, margin, status_h, ui->w - 2 * margin, events_h);
     ui->dirty = false;
 }
