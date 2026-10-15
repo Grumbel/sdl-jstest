@@ -158,8 +158,9 @@ static void draw_char(GraphUI* ui, int x, int y, char ch, uint32_t c)
     const uint8_t* g = font8x8_basic[idx];
     for (int row = 0; row < 8; ++row) {
         uint8_t bits = g[row];
+        /* Font bytes are LSB-left (bit 0 = leftmost pixel). */
         for (int col = 0; col < 8; ++col)
-            if (bits & (0x80 >> col))
+            if (bits & (1u << col))
                 put_pixel(ui, x + col, y + row, c);
     }
 }
@@ -249,9 +250,9 @@ static void draw_event_log(GraphUI* ui, int x, int y, int w, int h)
 {
     fill_rect(ui, x, y, w, h, COL_PANEL);
     draw_rect_outline(ui, x, y, w, h, COL_BORDER);
-    draw_text(ui, x + 8, y + 6, "Events", COL_CYAN);
-    int line_h = 12, top = y + 22;
-    int visible = (h - 28) / line_h;
+    draw_text(ui, x + 6, y + 4, "Events", COL_CYAN);
+    int line_h = 11, top = y + 18;
+    int visible = (h - 24) / line_h;
     if (visible < 1) return;
     int start = ui->log_len > visible ? ui->log_len - visible : 0;
     for (int i = 0; i < visible && start + i < ui->log_len; ++i) {
@@ -272,39 +273,51 @@ void graph_ui_draw_joystick(GraphUI* ui, const char* name, int joy_idx,
     const uint8_t* hats, int num_hats, const int16_t* balls, int num_balls)
 {
     graph_ui_clear(ui, COL_BG);
-    int margin = 12;
+    /* Compact margins so 640x480 still fits axes + log. */
+    int margin = (ui->w < 800 || ui->h < 600) ? 6 : 12;
+    int pad = (ui->w < 800 || ui->h < 600) ? 8 : 12;
+    int events_min = (ui->h < 600) ? 72 : 80;
     int status_h = ui->h * 2 / 3;
-    if (status_h < 200) status_h = ui->h - 120;
+    if (status_h < 160)
+        status_h = ui->h - events_min - margin;
     int events_h = ui->h - status_h - margin;
-    if (events_h < 80) { events_h = 80; status_h = ui->h - events_h - margin; }
+    if (events_h < events_min) {
+        events_h = events_min;
+        status_h = ui->h - events_h - margin;
+    }
+    if (status_h < 80)
+        status_h = ui->h / 2;
 
     fill_rect(ui, margin, margin, ui->w - 2 * margin, status_h - margin, COL_PANEL);
     draw_rect_outline(ui, margin, margin, ui->w - 2 * margin, status_h - margin, COL_BORDER);
 
-    int x = margin + 12, y = margin + 12;
-    int max_x = ui->w - margin - 12, max_y = status_h - 8;
+    int x = margin + pad, y = margin + pad;
+    int max_x = ui->w - margin - pad, max_y = status_h - 6;
+    int label_w = 80; /* space for "nn +32767 " before axis bar */
 
     draw_text(ui, x, y, name ? name : "(unknown)", COL_CYAN);
-    y += 14;
+    y += 12;
     char meta[128];
     snprintf(meta, sizeof(meta), "Index %d  Axes %d  Buttons %d  Hats %d  Balls %d",
              joy_idx, num_axes, num_buttons, num_hats, num_balls);
     draw_text(ui, x, y, meta, COL_DIM);
-    y += 18;
+    y += 14;
 
     if (num_axes > 0 && y < max_y) {
         draw_text(ui, x, y, "Axes", COL_YELLOW);
-        y += 14;
-        int bar_w = max_x - x - 100;
-        if (bar_w < 80) bar_w = 80;
-        for (int i = 0; i < num_axes && y + 12 < max_y; ++i) {
+        y += 12;
+        int bar_w = max_x - x - label_w;
+        if (bar_w < 48) bar_w = 48;
+        int bar_h = (ui->h < 600) ? 10 : 12;
+        int row_gap = (ui->h < 600) ? 14 : 18;
+        for (int i = 0; i < num_axes && y + bar_h < max_y; ++i) {
             char lab[32];
             snprintf(lab, sizeof(lab), "%2d %+6d", i, (int)axes[i]);
-            draw_text(ui, x, y + 2, lab, COL_TEXT);
-            draw_axis_bar(ui, x + 88, y, bar_w, 12, axes[i]);
-            y += 18;
+            draw_text(ui, x, y + 1, lab, COL_TEXT);
+            draw_axis_bar(ui, x + label_w, y, bar_w, bar_h, axes[i]);
+            y += row_gap;
         }
-        y += 6;
+        y += 4;
     }
 
     if (num_buttons > 0 && y < max_y) {
@@ -365,7 +378,8 @@ void graph_ui_draw_joystick(GraphUI* ui, const char* name, int joy_idx,
         }
     }
 
-    draw_text(ui, x, status_h - 20, "Esc/q: menu   Ctrl-C / close window: exit", COL_DIM);
+    if (status_h - 14 > y)
+        draw_text(ui, x, status_h - 14, "Esc/q: menu   Ctrl-C / close window: exit", COL_DIM);
     draw_event_log(ui, margin, status_h, ui->w - 2 * margin, events_h);
     ui->dirty = false;
 }
@@ -374,14 +388,15 @@ void graph_ui_draw_menu(GraphUI* ui, const char* title,
                         const char* const* items, int n_items)
 {
     graph_ui_clear(ui, COL_BG);
-    int margin = 12;
+    int margin = (ui->w < 800 || ui->h < 600) ? 6 : 12;
+    int pad = (ui->w < 800 || ui->h < 600) ? 10 : 16;
     fill_rect(ui, margin, margin, ui->w - 2 * margin, ui->h - 2 * margin, COL_PANEL);
     draw_rect_outline(ui, margin, margin, ui->w - 2 * margin, ui->h - 2 * margin, COL_BORDER);
-    int x = margin + 16, y = margin + 16;
+    int x = margin + pad, y = margin + pad;
     draw_text(ui, x, y, title ? title : "Select device", COL_CYAN);
-    y += 16;
+    y += 14;
     draw_text(ui, x, y, "Up/Down  Enter  Esc/q quit", COL_DIM);
-    y += 24;
+    y += 18;
     if (n_items <= 0) {
         draw_text(ui, x, y, "(no devices detected)", COL_TEXT);
     } else {
