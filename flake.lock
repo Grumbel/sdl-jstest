@@ -27,19 +27,17 @@
     "SDL2-win32": {
       "inputs": {
         "SDL2_src": "SDL2_src",
+        "flake-utils": "flake-utils",
         "nixpkgs": [
           "nixpkgs"
-        ],
-        "tinycmmc": [
-          "tinycmmc"
         ]
       },
       "locked": {
-        "lastModified": 1753127534,
-        "narHash": "sha256-73UFk9wGZb0CQ2EpFaXRczHzUUlOzK/Ov2KP3ewk4qw=",
+        "lastModified": 1786297641,
+        "narHash": "sha256-yu4LwoIC0TCh8EhZzyDj1u99WnkqslMNp5rrg3hqAWM=",
         "owner": "grumnix",
         "repo": "SDL2-win32",
-        "rev": "278a40a7bff4c0b0bf4f5ad1c528308df4a1b0f9",
+        "rev": "8ca7fe1bc9ef1201f1247fbcc8b560a1a06da8b1",
         "type": "github"
       },
       "original": {
@@ -92,13 +90,31 @@
         "type": "github"
       }
     },
+    "flake-utils_2": {
+      "inputs": {
+        "systems": "systems_2"
+      },
+      "locked": {
+        "lastModified": 1791914995,
+        "narHash": "sha256-Zf/xfQEAasnwnmEfHqW/4hjDE/s44yn2hD4RuVIZRjA=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "b7a79d3fea1e214f6d668d521cecec0c01e26544",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1785090369,
-        "narHash": "sha256-m0pDuRJG7EDo9ri+4Ksu83VsI+PlxNC9lNBfydejce4=",
+        "lastModified": 1792773339,
+        "narHash": "sha256-rZLrzrC6i+jnTAlvPZHogKDulY7WWDEv9hJeHieO7Zw=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "624af665418d3c65d544145b4d34ad696439570e",
+        "rev": "3ec636362e1816bc2f0888fa0fa2c69f1bc9e504",
         "type": "github"
       },
       "original": {
@@ -112,7 +128,7 @@
       "inputs": {
         "SDL-win32": "SDL-win32",
         "SDL2-win32": "SDL2-win32",
-        "flake-utils": "flake-utils",
+        "flake-utils": "flake-utils_2",
         "nixpkgs": "nixpkgs",
         "sdl_gamecontrollerdb": "sdl_gamecontrollerdb",
         "tinycmmc": "tinycmmc"
@@ -121,11 +137,11 @@
     "sdl_gamecontrollerdb": {
       "flake": false,
       "locked": {
-        "lastModified": 1785257949,
-        "narHash": "sha256-KDiY9siV1rlZ67aNSzozzfXcOBHXf9/LqF9fvdewhYs=",
+        "lastModified": 1793102918,
+        "narHash": "sha256-mq4GYi7USkFulF5C753ZdF0iXTBr/ueKjLd82iIQRSM=",
         "owner": "gabomdq",
         "repo": "SDL_GameControllerDB",
-        "rev": "cbd57ed77fe8bce6cf2b425127f58220a412bcb6",
+        "rev": "22a98f6339abf4b6ca6cb061443a70e4f7ab252d",
         "type": "github"
       },
       "original": {
@@ -135,6 +151,21 @@
       }
     },
     "systems": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    },
+    "systems_2": {
       "locked": {
         "lastModified": 1681028828,
         "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
@@ -159,11 +190,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1783197069,
-        "narHash": "sha256-NI2pxYz9w+4yZrwOVr8g0a4B8iFAmrWCsrjlHZEfskE=",
+        "lastModified": 1791292505,
+        "narHash": "sha256-n8H7eQTTGQ0U+/e2uCXemGFd7YILFBRCnar8UxMvlWg=",
         "owner": "grumbel",
         "repo": "tinycmmc",
-        "rev": "d7549879e3232909e124f25d33a33ce7dff153b6",
+        "rev": "70cbc39d671bbd6ed13aedb563126a0ce6d03263",
         "type": "github"
       },
       "original": {
