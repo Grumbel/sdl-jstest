@@ -8,21 +8,20 @@
 
 #include <SDL.h>
 #include <assert.h>
-#include <curses.h>
-#include <errno.h>
-#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <signal.h>
-#include "utils/dualsense.h"
-#include "ui/test_ui.h"
-#include "ui/graph_ui.h"
 #include <stdint.h>
-
-
-
+#include "common/cli.h"
+#include "common/report.h"
+#include "ui/graph_ui.h"
+#include "ui/gui_nav.h"
+#if defined(SDL_JSTEST_NCURSES)
+#  include "ui/test_ui.h"
+#  include "utils/dualsense.h"
+#endif
 
 /* Process-wide exit request (SIGINT/SIGTERM, window close, Ctrl-C in GUI). */
 static volatile sig_atomic_t g_app_quit = 0;
@@ -37,52 +36,6 @@ static void app_install_quit_handlers(void)
 {
     signal(SIGINT, app_quit_signal);
     signal(SIGTERM, app_quit_signal);
-}
-
-/* ---- SDL2 presenter for GraphUI ---- */
-typedef struct GraphPresent2 {
-    SDL_Window* win; SDL_Renderer* ren; SDL_Texture* tex; GraphUI ui;
-} GraphPresent2;
-
-static int graph_present2_open(GraphPresent2* gp, const char* title)
-{
-    memset(gp, 0, sizeof(*gp));
-    if (!graph_ui_init(&gp->ui, GRAPH_UI_DEFAULT_W, GRAPH_UI_DEFAULT_H)) return 0;
-    gp->win = SDL_CreateWindow(title ? title : "sdl2-jstest",
-        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, gp->ui.w, gp->ui.h, SDL_WINDOW_RESIZABLE);
-    if (!gp->win) { fprintf(stderr, "SDL_CreateWindow: %s\n", SDL_GetError()); graph_ui_shutdown(&gp->ui); return 0; }
-    gp->ren = SDL_CreateRenderer(gp->win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (!gp->ren) gp->ren = SDL_CreateRenderer(gp->win, -1, 0);
-    if (!gp->ren) { fprintf(stderr, "SDL_CreateRenderer: %s\n", SDL_GetError()); SDL_DestroyWindow(gp->win); graph_ui_shutdown(&gp->ui); return 0; }
-    gp->tex = SDL_CreateTexture(gp->ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, gp->ui.w, gp->ui.h);
-    if (!gp->tex) { fprintf(stderr, "SDL_CreateTexture: %s\n", SDL_GetError()); SDL_DestroyRenderer(gp->ren); SDL_DestroyWindow(gp->win); graph_ui_shutdown(&gp->ui); return 0; }
-    return 1;
-}
-static void graph_present2_frame(GraphPresent2* gp)
-{
-    SDL_UpdateTexture(gp->tex, NULL, gp->ui.pixels, gp->ui.w * (int)sizeof(uint32_t));
-    SDL_RenderClear(gp->ren); SDL_RenderCopy(gp->ren, gp->tex, NULL, NULL); SDL_RenderPresent(gp->ren);
-}
-static void graph_present2_close(GraphPresent2* gp)
-{
-    if (gp->tex) SDL_DestroyTexture(gp->tex);
-    if (gp->ren) SDL_DestroyRenderer(gp->ren);
-    if (gp->win) SDL_DestroyWindow(gp->win);
-    graph_ui_shutdown(&gp->ui); memset(gp, 0, sizeof(*gp));
-}
-static int graph_present2_map_key(const SDL_Event* e, int* mk, TestUIAction* act)
-{
-    if (e->type != SDL_KEYDOWN) return 0;
-    SDL_Keycode k = e->key.keysym.sym;
-    if (k == SDLK_ESCAPE || k == SDLK_q) { if (act) *act = TEST_UI_BACK; if (mk) *mk = 27; return 1; }
-    if (k == SDLK_c && (e->key.keysym.mod & KMOD_CTRL)) { if (act) *act = TEST_UI_QUIT; if (mk) *mk = 27; return 1; }
-    if (!mk) return 0;
-    if (k == SDLK_UP || k == SDLK_k) *mk = GRAPH_UI_KEY_UP;
-    else if (k == SDLK_DOWN || k == SDLK_j) *mk = GRAPH_UI_KEY_DOWN;
-    else if (k == SDLK_RETURN || k == SDLK_KP_ENTER || k == SDLK_SPACE) *mk = '\n';
-    else if (k >= SDLK_0 && k <= SDLK_9) *mk = '0' + (int)(k - SDLK_0);
-    else return 0;
-    return 1;
 }
 
 static const char* sdl_event_name(Uint32 type)
@@ -155,35 +108,6 @@ static const char* sdl_event_name(Uint32 type)
 }
 
 
-static int str2int(const char* str, int* val)
-{
-    char* endptr;
-
-    errno = 0;
-    long tmp = strtol(str, &endptr, 10);
-
-    // error
-    if (errno != 0)
-    {
-        return 0;
-    }
-
-    // garbage at the end
-    if (*endptr != '\0')
-    {
-        return 0;
-    }
-
-    // out of range of int
-    if (tmp < INT_MIN || tmp > INT_MAX)
-    {
-        return 0;
-    }
-
-    *val = (int)tmp;
-    return 1;
-}
-
 static void print_joystick_info(int joy_idx, SDL_Joystick* joy, SDL_GameController* gamepad)
 {
     SDL_JoystickGUID guid = SDL_JoystickGetGUID(joy);
@@ -208,30 +132,6 @@ static void print_joystick_info(int joy_idx, SDL_Joystick* joy, SDL_GameControll
         printf("  Mapping: '%s'\n", SDL_GameControllerMappingForGUID(guid));
     }
     printf("\n");
-}
-
-static void print_help(const char* prg)
-{
-    printf("Usage: %s [OPTION]\n", prg);
-    printf("With no options, opens an interactive device menu.\n");
-    printf("List available joysticks or test a joystick.\n");
-    printf("This programm uses SDL for doing its test instead of using the raw\n"
-        "/dev/input/jsX interface\n");
-    printf("\n");
-    printf("Options:\n");
-    printf("  -h, --help             Print this help\n");
-    printf("  --version              Print version number and exit\n");
-    printf("  -l, --list             Search for available joysticks and list their properties\n");
-    printf("  -t, --test JOYNUM      Terminal (ncurses) joystick state display\n");
-    printf("  -G, --gui [JOYNUM]     SDL window joystick test (omit JOYNUM for menu)\n");
-    printf("  -g, --gamecontroller IDX\n"
-        "                         Test GameController\n");
-    printf("  -e, --event JOYNUM     Display the events that are received from the joystick\n");
-    printf("  -r, --rumble JOYNUM    Test rumble effects on gamepad JOYNUM\n");
-    printf("\n");
-    printf("Examples:\n");
-    printf("  %s --list\n", prg);
-    printf("  %s --test 1\n", prg);
 }
 
 static void list_joysticks(void)
@@ -265,6 +165,7 @@ static void list_joysticks(void)
     }
 }
 
+#if defined(SDL_JSTEST_NCURSES)
 static void test_joystick(int joy_idx)
 {
     SDL_Joystick* joy = SDL_JoystickOpen(joy_idx);
@@ -607,6 +508,50 @@ static void test_gamecontroller(int gamecontroller_idx)
     }
 }
 
+static int interactive_menu(void)
+{
+    for (;;)
+    {
+        int njoy = SDL_NumJoysticks();
+        char** labels = calloc((size_t)(njoy > 0 ? njoy : 1), sizeof(char*));
+        int* is_gc = calloc((size_t)(njoy > 0 ? njoy : 1), sizeof(int));
+        for (int i = 0; i < njoy; ++i)
+        {
+            char buf[256];
+            const char* name = SDL_JoystickNameForIndex(i);
+            int gc = SDL_IsGameController(i);
+            is_gc[i] = gc;
+            snprintf(buf, sizeof(buf), "%s  %s",
+                     gc ? "[pad]" : "[joy]",
+                     name ? name : "(unknown)");
+            labels[i] = malloc(strlen(buf) + 1);
+            if (labels[i])
+                memcpy(labels[i], buf, strlen(buf) + 1);
+        }
+
+        TestUI ui;
+        test_ui_init(&ui);
+        int sel = test_ui_menu_select(&ui, "Select joystick / gamecontroller",
+                                      (const char* const*)labels, njoy);
+        test_ui_shutdown(&ui);
+
+        for (int i = 0; i < njoy; ++i)
+            free(labels[i]);
+        free(labels);
+        free(is_gc);
+
+        if (sel < 0)
+            return 0;
+
+        if (SDL_IsGameController(sel))
+            test_gamecontroller(sel);
+        else
+            test_joystick(sel);
+        /* Esc from test returns here and reopens menu */
+    }
+}
+#endif /* SDL_JSTEST_NCURSES */
+
 static void event_joystick(int joy_idx)
 {
     SDL_Joystick* joy = SDL_JoystickOpen(joy_idx);
@@ -747,427 +692,675 @@ static void test_rumble(int joy_idx)
 
 
 
-static int gui_test_joystick(int joy_idx)
+/* ---- Window UI ----
+   One window for the whole session (Android and KMSDRM have one surface):
+   the 640x480 GraphUI buffer scaled to it with the aspect ratio kept. */
+
+typedef struct Gui {
+    SDL_Window* win;
+    SDL_Renderer* ren;
+    SDL_Texture* tex;
+    GraphUI ui;
+    bool vsync;
+    /* Every gamecontroller stays open so that its buttons navigate. */
+    SDL_GameController* pads[16];
+    GuiHold hold;      /* gamepad Back held in a device view */
+    GuiStick stick;    /* left stick in the menu */
+} Gui;
+
+static void report_window(Gui* gui)
+{
+    int w, h, dw, dh;
+    SDL_GetWindowSize(gui->win, &w, &h);
+    SDL_GL_GetDrawableSize(gui->win, &dw, &dh);
+    Uint32 flags = SDL_GetWindowFlags(gui->win);
+    SDL_DisplayMode mode;
+    int display = SDL_GetWindowDisplayIndex(gui->win);
+    if (display >= 0 && SDL_GetCurrentDisplayMode(display, &mode) == 0)
+        report_line("video", "%s, display %d %dx%d @ %d Hz %s, window %dx%d, drawable %dx%d%s",
+                    SDL_GetCurrentVideoDriver(), display, mode.w, mode.h, mode.refresh_rate,
+                    SDL_GetPixelFormatName(mode.format), w, h, dw, dh,
+                    (flags & SDL_WINDOW_FULLSCREEN) ? ", fullscreen" : "");
+    else
+        report_line("video", "%s, window %dx%d, display mode unknown: %s",
+                    SDL_GetCurrentVideoDriver(), w, h, SDL_GetError());
+
+    SDL_RendererInfo info;
+    if (SDL_GetRendererInfo(gui->ren, &info) == 0) {
+        report_line("renderer", "%s, %s%s%s, max texture %dx%d", info.name,
+                    (info.flags & SDL_RENDERER_ACCELERATED) ? "accelerated" : "software",
+                    (info.flags & SDL_RENDERER_PRESENTVSYNC) ? ", vsync" : "",
+                    (info.flags & SDL_RENDERER_TARGETTEXTURE) ? ", target textures" : "",
+                    info.max_texture_width, info.max_texture_height);
+        gui->vsync = (info.flags & SDL_RENDERER_PRESENTVSYNC) != 0;
+    }
+
+    /* The renderer's GL context is current after creating it. */
+    if (SDL_GL_GetCurrentContext()) {
+        typedef const unsigned char* (*GetStringFn)(unsigned int);
+        /* ISO C has no object → function pointer cast; copy the bits. */
+        void* proc = SDL_GL_GetProcAddress("glGetString");
+        GetStringFn get_string = NULL;
+        memcpy(&get_string, &proc, sizeof(get_string));
+        if (get_string) {
+            const char* vendor = (const char*)get_string(0x1F00);
+            const char* renderer = (const char*)get_string(0x1F01);
+            const char* version = (const char*)get_string(0x1F02);
+            const char* glsl = (const char*)get_string(0x8B8C);
+            report_line("opengl", "%s, %s, %s, GLSL %s", vendor ? vendor : "?",
+                        renderer ? renderer : "?", version ? version : "?", glsl ? glsl : "?");
+        }
+    }
+}
+
+static bool gui_open(Gui* gui, const JstestOptions* opts)
+{
+    memset(gui, 0, sizeof(*gui));
+    if (!graph_ui_init(&gui->ui, GRAPH_UI_DEFAULT_W, GRAPH_UI_DEFAULT_H)) return false;
+
+    /* The bitmap font stays sharp when scaled. */
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
+    Uint32 flags = SDL_WINDOW_RESIZABLE;
+    if (opts->fullscreen == 1) flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+    int w = opts->width > 0 ? opts->width : gui->ui.w;
+    int h = opts->height > 0 ? opts->height : gui->ui.h;
+    gui->win = SDL_CreateWindow("sdl2-jstest", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                                w, h, flags);
+    if (!gui->win) {
+        fprintf(stderr, "error: SDL_CreateWindow: %s\n", SDL_GetError());
+        graph_ui_shutdown(&gui->ui);
+        return false;
+    }
+    gui->ren = SDL_CreateRenderer(gui->win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if (!gui->ren) {
+        fprintf(stderr, "renderer: no accelerated renderer (%s), trying any\n", SDL_GetError());
+        gui->ren = SDL_CreateRenderer(gui->win, -1, 0);
+    }
+    if (!gui->ren) {
+        fprintf(stderr, "error: SDL_CreateRenderer: %s\n", SDL_GetError());
+        SDL_DestroyWindow(gui->win);
+        graph_ui_shutdown(&gui->ui);
+        return false;
+    }
+    SDL_RenderSetLogicalSize(gui->ren, gui->ui.w, gui->ui.h);
+    gui->tex = SDL_CreateTexture(gui->ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
+                                 gui->ui.w, gui->ui.h);
+    if (!gui->tex) {
+        fprintf(stderr, "error: SDL_CreateTexture: %s\n", SDL_GetError());
+        SDL_DestroyRenderer(gui->ren);
+        SDL_DestroyWindow(gui->win);
+        graph_ui_shutdown(&gui->ui);
+        return false;
+    }
+    report_window(gui);
+
+    for (int i = 0; i < SDL_NumJoysticks(); ++i) {
+        if (SDL_IsGameController(i) && i < (int)SDL_arraysize(gui->pads))
+            gui->pads[i] = SDL_GameControllerOpen(i);
+    }
+    return true;
+}
+
+static void gui_close(Gui* gui)
+{
+    for (size_t i = 0; i < SDL_arraysize(gui->pads); ++i)
+        if (gui->pads[i]) SDL_GameControllerClose(gui->pads[i]);
+    if (gui->tex) SDL_DestroyTexture(gui->tex);
+    if (gui->ren) SDL_DestroyRenderer(gui->ren);
+    if (gui->win) SDL_DestroyWindow(gui->win);
+    graph_ui_shutdown(&gui->ui);
+    memset(gui, 0, sizeof(*gui));
+}
+
+static void gui_present(Gui* gui)
+{
+    SDL_UpdateTexture(gui->tex, NULL, gui->ui.pixels, gui->ui.w * (int)sizeof(uint32_t));
+    SDL_SetRenderDrawColor(gui->ren, 0, 0, 0, 255);
+    SDL_RenderClear(gui->ren);
+    SDL_RenderCopy(gui->ren, gui->tex, NULL, NULL);
+    SDL_RenderPresent(gui->ren);
+    if (!gui->vsync) SDL_Delay(10);
+}
+
+/* Keeps gui->pads in step with hotplugging. */
+static void gui_track_pads(Gui* gui, const SDL_Event* ev)
+{
+    if (ev->type == SDL_CONTROLLERDEVICEADDED) {
+        int idx = ev->cdevice.which;
+        for (size_t i = 0; i < SDL_arraysize(gui->pads); ++i) {
+            if (!gui->pads[i]) {
+                gui->pads[i] = SDL_GameControllerOpen(idx);
+                break;
+            }
+        }
+    } else if (ev->type == SDL_CONTROLLERDEVICEREMOVED) {
+        for (size_t i = 0; i < SDL_arraysize(gui->pads); ++i) {
+            SDL_Joystick* joy = gui->pads[i] ? SDL_GameControllerGetJoystick(gui->pads[i]) : NULL;
+            if (joy && SDL_JoystickInstanceID(joy) == ev->cdevice.which) {
+                SDL_GameControllerClose(gui->pads[i]);
+                gui->pads[i] = NULL;
+            }
+        }
+    }
+}
+
+/* Event → navigation. In the menu, gamepads navigate (D-pad, left stick,
+   A / Start, B / Back); in a device view only holding Back leaves, so that
+   every button can be tested. */
+static GuiAction gui_action(Gui* gui, const SDL_Event* ev, bool in_menu, int* pick)
+{
+    switch (ev->type) {
+    case SDL_QUIT:
+        return GUI_QUIT;
+    case SDL_KEYDOWN: {
+        SDL_Keycode k = ev->key.keysym.sym;
+        if (k == SDLK_c && (ev->key.keysym.mod & KMOD_CTRL)) return GUI_QUIT;
+        if (k == SDLK_ESCAPE || k == SDLK_q || k == SDLK_AC_BACK) return GUI_BACK;
+        if (!in_menu) return GUI_NONE;
+        if (k == SDLK_UP || k == SDLK_k) return GUI_UP;
+        if (k == SDLK_DOWN || k == SDLK_j) return GUI_DOWN;
+        if (k == SDLK_RETURN || k == SDLK_KP_ENTER || k == SDLK_SPACE) return GUI_CONFIRM;
+        if (k >= SDLK_0 && k <= SDLK_9) {
+            *pick = (int)(k - SDLK_0);
+            return GUI_PICK;
+        }
+        return GUI_NONE;
+    }
+    case SDL_MOUSEBUTTONDOWN:
+        if (ev->button.button != SDL_BUTTON_LEFT) return GUI_NONE;
+        if (in_menu) {
+            *pick = graph_ui_menu_hit(&gui->ui, ev->button.x, ev->button.y);
+            return *pick >= 0 ? GUI_PICK : GUI_NONE;
+        }
+        return graph_ui_back_hit(&gui->ui, ev->button.x, ev->button.y) ? GUI_BACK : GUI_NONE;
+    case SDL_CONTROLLERBUTTONDOWN:
+    case SDL_CONTROLLERBUTTONUP: {
+        bool down = ev->type == SDL_CONTROLLERBUTTONDOWN;
+        Uint8 b = ev->cbutton.button;
+        if (!in_menu) {
+            if (b == SDL_CONTROLLER_BUTTON_BACK) gui_hold_set(&gui->hold, down, SDL_GetTicks());
+            return GUI_NONE;
+        }
+        if (!down) return GUI_NONE;
+        if (b == SDL_CONTROLLER_BUTTON_DPAD_UP) return GUI_UP;
+        if (b == SDL_CONTROLLER_BUTTON_DPAD_DOWN) return GUI_DOWN;
+        if (b == SDL_CONTROLLER_BUTTON_A || b == SDL_CONTROLLER_BUTTON_START) return GUI_CONFIRM;
+        if (b == SDL_CONTROLLER_BUTTON_B || b == SDL_CONTROLLER_BUTTON_BACK) return GUI_BACK;
+        return GUI_NONE;
+    }
+    case SDL_CONTROLLERAXISMOTION:
+        if (in_menu && ev->caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
+            return gui_stick_axis(&gui->stick, ev->caxis.value);
+        return GUI_NONE;
+    default:
+        return GUI_NONE;
+    }
+}
+
+static const char* kViewHint = "Esc / Back key / hold Select: menu";
+
+/* Per-frame part of a device view: the hold-to-leave check. */
+static bool gui_view_hold_done(Gui* gui)
+{
+    gui->ui.hold_progress = gui_hold_progress(&gui->hold, SDL_GetTicks(), GUI_HOLD_MS);
+    return gui->ui.hold_progress >= 1.0f;
+}
+
+static void gui_view_begin(Gui* gui, const char* name)
+{
+    char title[160];
+    snprintf(title, sizeof(title), "sdl2-jstest - %s", name ? name : "joystick");
+    SDL_SetWindowTitle(gui->win, title);
+    memset(&gui->hold, 0, sizeof(gui->hold));
+    gui->ui.hint = kViewHint;
+    gui->ui.hold_progress = 0.0f;
+    gui->ui.log_len = gui->ui.log_head = 0;
+}
+
+static GuiAction gui_test_joystick(Gui* gui, int joy_idx)
 {
     SDL_Joystick* joy = SDL_JoystickOpen(joy_idx);
-    if (!joy) { fprintf(stderr, "Unable to open joystick %d\n", joy_idx); return 1; }
+    if (!joy) {
+        fprintf(stderr, "error: unable to open joystick %d: %s\n", joy_idx, SDL_GetError());
+        return GUI_BACK;
+    }
 
     int num_axes = SDL_JoystickNumAxes(joy);
     int num_buttons = SDL_JoystickNumButtons(joy);
     int num_hats = SDL_JoystickNumHats(joy);
     int num_balls = SDL_JoystickNumBalls(joy);
     if (num_axes < 0 || num_buttons < 0 || num_hats < 0 || num_balls < 0) {
-        fprintf(stderr, "Unable to query joystick layout: %s\n", SDL_GetError());
-        SDL_JoystickClose(joy); return 1;
+        fprintf(stderr, "error: unable to query joystick layout: %s\n", SDL_GetError());
+        SDL_JoystickClose(joy);
+        return GUI_BACK;
     }
-    Sint16* axes = calloc((size_t)num_axes, sizeof(Sint16));
-    Uint8* buttons = calloc((size_t)num_buttons, sizeof(Uint8));
-    Uint8* hats = calloc((size_t)num_hats, sizeof(Uint8));
-    Sint16* balls = calloc((size_t)num_balls, 2 * sizeof(Sint16));
+    Sint16* axes = calloc((size_t)num_axes + 1, sizeof(Sint16));
+    Uint8* buttons = calloc((size_t)num_buttons + 1, sizeof(Uint8));
+    Uint8* hats = calloc((size_t)num_hats + 1, sizeof(Uint8));
+    Sint16* balls = calloc((size_t)num_balls + 1, 2 * sizeof(Sint16));
     SDL_JoystickID open_iid = SDL_JoystickInstanceID(joy);
     for (int i = 0; i < num_axes; ++i) axes[i] = SDL_JoystickGetAxis(joy, i);
     for (int i = 0; i < num_buttons; ++i) buttons[i] = SDL_JoystickGetButton(joy, i);
     for (int i = 0; i < num_hats; ++i) hats[i] = SDL_JoystickGetHat(joy, i);
 
-    GraphPresent2 gp;
-    char title[128];
-    snprintf(title, sizeof(title), "sdl2-jstest — %s",
-             SDL_JoystickName(joy) ? SDL_JoystickName(joy) : "joystick");
-    if (!graph_present2_open(&gp, title)) {
-        free(balls); free(hats); free(buttons); free(axes); SDL_JoystickClose(joy); return 1;
-    }
-    graph_ui_log(&gp.ui, "Opened joystick %d '%s' (instance %d)", joy_idx,
+    gui_view_begin(gui, SDL_JoystickName(joy));
+    graph_ui_log(&gui->ui, "Opened joystick %d '%s' (instance %d)", joy_idx,
                  SDL_JoystickName(joy) ? SDL_JoystickName(joy) : "?", (int)open_iid);
 
-    int quit = 0;       /* leave this screen (Esc → menu) */
-    int exit_app = 0;   /* leave the whole program */
-    SDL_Event event;
-    while (!quit && !exit_app && !g_app_quit) {
-        SDL_Delay(10);
-        while (SDL_PollEvent(&event)) {
-            TestUIAction act = TEST_UI_CONTINUE;
-            if (graph_present2_map_key(&event, NULL, &act)) {
-                if (act == TEST_UI_QUIT)
-                    exit_app = 1;
-                else if (act == TEST_UI_BACK)
-                    quit = 1;
-                continue;
+    GuiAction result = GUI_NONE;
+    while (result == GUI_NONE && !g_app_quit) {
+        SDL_Event event;
+        while (result == GUI_NONE && SDL_PollEvent(&event)) {
+            int pick = -1;
+            gui_track_pads(gui, &event);
+            GuiAction act = gui_action(gui, &event, false, &pick);
+            if (act == GUI_BACK || act == GUI_QUIT) {
+                result = act;
+                break;
             }
             switch (event.type) {
             case SDL_JOYAXISMOTION:
+                if (event.jaxis.which != open_iid) break;
                 if (event.jaxis.axis < num_axes) axes[event.jaxis.axis] = event.jaxis.value;
-                graph_ui_log(&gp.ui, "%s which=%d axis=%d value=%+d",
-                    sdl_event_name(event.type), event.jaxis.which, event.jaxis.axis, event.jaxis.value);
+                graph_ui_log(&gui->ui, "%s axis=%d value=%+d",
+                    sdl_event_name(event.type), event.jaxis.axis, event.jaxis.value);
                 break;
             case SDL_JOYBUTTONDOWN:
             case SDL_JOYBUTTONUP:
+                if (event.jbutton.which != open_iid) break;
                 if (event.jbutton.button < num_buttons) buttons[event.jbutton.button] = event.jbutton.state;
-                graph_ui_log(&gp.ui, "%s which=%d button=%d %s",
-                    sdl_event_name(event.type), event.jbutton.which, event.jbutton.button,
+                graph_ui_log(&gui->ui, "%s button=%d %s",
+                    sdl_event_name(event.type), event.jbutton.button,
                     event.jbutton.state ? "DOWN" : "UP");
                 break;
             case SDL_JOYHATMOTION:
+                if (event.jhat.which != open_iid) break;
                 if (event.jhat.hat < num_hats) hats[event.jhat.hat] = event.jhat.value;
-                graph_ui_log(&gp.ui, "%s which=%d hat=%d value=0x%02x",
-                    sdl_event_name(event.type), event.jhat.which, event.jhat.hat, event.jhat.value);
+                graph_ui_log(&gui->ui, "%s hat=%d value=0x%02x",
+                    sdl_event_name(event.type), event.jhat.hat, event.jhat.value);
                 break;
             case SDL_JOYBALLMOTION:
+                if (event.jball.which != open_iid) break;
                 if (event.jball.ball < num_balls) {
                     balls[2*event.jball.ball] = event.jball.xrel;
                     balls[2*event.jball.ball+1] = event.jball.yrel;
                 }
-                graph_ui_log(&gp.ui, "%s which=%d ball=%d dx=%d dy=%d",
-                    sdl_event_name(event.type), event.jball.which, event.jball.ball,
+                graph_ui_log(&gui->ui, "%s ball=%d dx=%d dy=%d",
+                    sdl_event_name(event.type), event.jball.ball,
                     event.jball.xrel, event.jball.yrel);
                 break;
             case SDL_JOYDEVICEREMOVED:
-                graph_ui_log(&gp.ui, "*** DISCONNECTED *** which=%d%s",
-                    event.jdevice.which, event.jdevice.which == open_iid ? " (this device)" : "");
-                if (event.jdevice.which == open_iid) quit = 1;
-                break;
-            case SDL_QUIT:
-                /* Window close → exit the whole app, not just this screen. */
-                exit_app = 1;
-                g_app_quit = 1;
+                if (event.jdevice.which == open_iid) {
+                    fprintf(stderr, "joystick %d: disconnected\n", joy_idx);
+                    result = GUI_BACK;
+                }
                 break;
             default:
                 break;
             }
         }
-        graph_ui_draw_joystick(&gp.ui, SDL_JoystickName(joy), joy_idx,
+        if (result == GUI_NONE && gui_view_hold_done(gui)) result = GUI_BACK;
+        graph_ui_draw_joystick(&gui->ui, SDL_JoystickName(joy), joy_idx,
             axes, num_axes, buttons, num_buttons, NULL, NULL, 0,
             hats, num_hats, balls, num_balls);
-        graph_present2_frame(&gp);
+        gui_present(gui);
     }
-    graph_present2_close(&gp);
     free(balls); free(hats); free(buttons); free(axes);
     SDL_JoystickClose(joy);
-    return (exit_app || g_app_quit) ? 1 : 0;
+    return g_app_quit ? GUI_QUIT : result;
 }
 
-static int gui_test_gamecontroller(int idx)
+static GuiAction gui_test_gamecontroller(Gui* gui, int idx)
 {
-    /* Prefer gamecontroller open; fall back to raw joystick GUI */
-    if (SDL_IsGameController(idx)) {
-        SDL_GameController* gp_pad = SDL_GameControllerOpen(idx);
-        if (!gp_pad) { return gui_test_joystick(idx); }
-        SDL_Joystick* joy = SDL_GameControllerGetJoystick(gp_pad);
-        int num_axes = SDL_CONTROLLER_AXIS_MAX;
-        int num_buttons = SDL_CONTROLLER_BUTTON_MAX;
-        Sint16* axes = calloc((size_t)num_axes, sizeof(Sint16));
-        Uint8* buttons = calloc((size_t)num_buttons, sizeof(Uint8));
-        const char** labels = calloc((size_t)num_buttons, sizeof(char*));
-        for (int i = 0; i < num_buttons; ++i) {
-            const char* s = SDL_GameControllerGetStringForButton(i);
-            labels[i] = s ? s : "";
-        }
-        for (int i = 0; i < num_axes; ++i) axes[i] = SDL_GameControllerGetAxis(gp_pad, i);
-        for (int i = 0; i < num_buttons; ++i) buttons[i] = SDL_GameControllerGetButton(gp_pad, i) ? 1 : 0;
-        SDL_JoystickID open_iid = joy ? SDL_JoystickInstanceID(joy) : -1;
+    SDL_GameController* pad = SDL_GameControllerOpen(idx);
+    if (!pad) return gui_test_joystick(gui, idx);
 
-        GraphPresent2 gp;
-        char title[128];
-        snprintf(title, sizeof(title), "sdl2-jstest — %s",
-                 SDL_GameControllerName(gp_pad) ? SDL_GameControllerName(gp_pad) : "gamepad");
-        if (!graph_present2_open(&gp, title)) {
-            free(labels); free(buttons); free(axes); SDL_GameControllerClose(gp_pad); return 1;
-        }
-        graph_ui_log(&gp.ui, "GameController '%s' (instance %d)",
-                     SDL_GameControllerName(gp_pad), (int)open_iid);
-
-        int quit = 0;
-        int exit_app = 0;
-        SDL_Event event;
-        while (!quit && !exit_app && !g_app_quit) {
-            SDL_Delay(10);
-            while (SDL_PollEvent(&event)) {
-                TestUIAction act = TEST_UI_CONTINUE;
-                if (graph_present2_map_key(&event, NULL, &act)) {
-                    if (act == TEST_UI_QUIT)
-                        exit_app = 1;
-                    else if (act == TEST_UI_BACK)
-                        quit = 1;
-                    continue;
-                }
-                switch (event.type) {
-                case SDL_CONTROLLERAXISMOTION:
-                    if (event.caxis.axis < num_axes) axes[event.caxis.axis] = event.caxis.value;
-                    graph_ui_log(&gp.ui, "%s axis=%d value=%+d", sdl_event_name(event.type),
-                        event.caxis.axis, event.caxis.value);
-                    break;
-                case SDL_CONTROLLERBUTTONDOWN:
-                case SDL_CONTROLLERBUTTONUP:
-                    if (event.cbutton.button < num_buttons) buttons[event.cbutton.button] = event.cbutton.state;
-                    graph_ui_log(&gp.ui, "%s button=%d %s", sdl_event_name(event.type),
-                        event.cbutton.button, event.cbutton.state ? "DOWN" : "UP");
-                    break;
-                case SDL_JOYDEVICEREMOVED:
-                    if (event.jdevice.which == open_iid) quit = 1;
-                    break;
-                case SDL_QUIT:
-                    exit_app = 1;
-                    g_app_quit = 1;
-                    break;
-                default:
-                    break;
-                }
-            }
-            TestUIButtonGroup pad_groups[] = {{0,4},{4,7},{7,11},{11,15},{15,num_buttons}};
-            int ng = num_buttons <= 15 ? 4 : 5;
-            graph_ui_draw_joystick(&gp.ui, SDL_GameControllerName(gp_pad),
-                SDL_GameControllerGetPlayerIndex(gp_pad),
-                axes, num_axes, buttons, num_buttons, labels, pad_groups, ng,
-                NULL, 0, NULL, 0);
-            graph_present2_frame(&gp);
-        }
-        graph_present2_close(&gp);
-        free(labels); free(buttons); free(axes);
-        SDL_GameControllerClose(gp_pad);
-        return (exit_app || g_app_quit) ? 1 : 0;
-    } else {
-        return gui_test_joystick(idx);
+    SDL_Joystick* joy = SDL_GameControllerGetJoystick(pad);
+    int num_axes = SDL_CONTROLLER_AXIS_MAX;
+    int num_buttons = SDL_CONTROLLER_BUTTON_MAX;
+    Sint16 axes[SDL_CONTROLLER_AXIS_MAX];
+    Uint8 buttons[SDL_CONTROLLER_BUTTON_MAX];
+    const char* labels[SDL_CONTROLLER_BUTTON_MAX];
+    for (int i = 0; i < num_buttons; ++i) {
+        const char* s = SDL_GameControllerGetStringForButton((SDL_GameControllerButton)i);
+        labels[i] = s ? s : "";
+        buttons[i] = SDL_GameControllerGetButton(pad, (SDL_GameControllerButton)i) ? 1 : 0;
     }
+    for (int i = 0; i < num_axes; ++i)
+        axes[i] = SDL_GameControllerGetAxis(pad, (SDL_GameControllerAxis)i);
+    SDL_JoystickID open_iid = joy ? SDL_JoystickInstanceID(joy) : -1;
+
+    gui_view_begin(gui, SDL_GameControllerName(pad));
+    graph_ui_log(&gui->ui, "GameController '%s' (instance %d)",
+                 SDL_GameControllerName(pad) ? SDL_GameControllerName(pad) : "?", (int)open_iid);
+
+    GuiAction result = GUI_NONE;
+    while (result == GUI_NONE && !g_app_quit) {
+        SDL_Event event;
+        while (result == GUI_NONE && SDL_PollEvent(&event)) {
+            int pick = -1;
+            gui_track_pads(gui, &event);
+            GuiAction act = gui_action(gui, &event, false, &pick);
+            if (act == GUI_BACK || act == GUI_QUIT) {
+                result = act;
+                break;
+            }
+            switch (event.type) {
+            case SDL_CONTROLLERAXISMOTION:
+                if (event.caxis.which != open_iid) break;
+                if (event.caxis.axis < num_axes) axes[event.caxis.axis] = event.caxis.value;
+                graph_ui_log(&gui->ui, "%s axis=%d (%s) value=%+d", sdl_event_name(event.type),
+                    event.caxis.axis,
+                    SDL_GameControllerGetStringForAxis((SDL_GameControllerAxis)event.caxis.axis),
+                    event.caxis.value);
+                break;
+            case SDL_CONTROLLERBUTTONDOWN:
+            case SDL_CONTROLLERBUTTONUP:
+                if (event.cbutton.which != open_iid) break;
+                if (event.cbutton.button < num_buttons) buttons[event.cbutton.button] = event.cbutton.state;
+                graph_ui_log(&gui->ui, "%s button=%d (%s) %s", sdl_event_name(event.type),
+                    event.cbutton.button, labels[event.cbutton.button < num_buttons ? event.cbutton.button : 0],
+                    event.cbutton.state ? "DOWN" : "UP");
+                break;
+            case SDL_CONTROLLERDEVICEREMOVED:
+                if (event.cdevice.which == open_iid) {
+                    fprintf(stderr, "gamecontroller %d: disconnected\n", idx);
+                    result = GUI_BACK;
+                }
+                break;
+            default:
+                break;
+            }
+        }
+        if (result == GUI_NONE && gui_view_hold_done(gui)) result = GUI_BACK;
+        TestUIButtonGroup pad_groups[] = {{0,4},{4,7},{7,11},{11,15},{15,num_buttons}};
+        int ng = num_buttons <= 15 ? 4 : 5;
+        graph_ui_draw_joystick(&gui->ui, SDL_GameControllerName(pad),
+            SDL_GameControllerGetPlayerIndex(pad),
+            axes, num_axes, buttons, num_buttons, labels, pad_groups, ng,
+            NULL, 0, NULL, 0);
+        gui_present(gui);
+    }
+    SDL_GameControllerClose(pad);
+    return g_app_quit ? GUI_QUIT : result;
 }
 
-static int gui_interactive_menu(void)
+/* Device menu, rebuilt every frame so that hotplugging shows at once; the
+   last row quits (touch has no other way). Returns the joystick index, or
+   -1 to quit. */
+static int gui_menu(Gui* gui)
 {
+    SDL_SetWindowTitle(gui->win, "sdl2-jstest - select device");
+    gui->ui.hint = "Up/Down  Enter/A: open  Esc/B: quit";
+    gui->ui.hold_progress = 0.0f;
+    memset(&gui->stick, 0, sizeof(gui->stick));
     for (;;) {
-        if (g_app_quit)
-            return 1;
+        if (g_app_quit) return -1;
         int njoy = SDL_NumJoysticks();
-        char** labels = calloc((size_t)(njoy > 0 ? njoy : 1), sizeof(char*));
+        if (njoy < 0) njoy = 0;
+        int nitems = njoy + 1;
+        char** labels = calloc((size_t)nitems, sizeof(char*));
         for (int i = 0; i < njoy; ++i) {
             char buf[256];
             const char* name = SDL_JoystickNameForIndex(i);
-            int gc = SDL_IsGameController(i);
-            snprintf(buf, sizeof(buf), "%s  %s", gc ? "[pad]" : "[joy]", name ? name : "(unknown)");
-            labels[i] = malloc(strlen(buf) + 1);
-            if (labels[i]) memcpy(labels[i], buf, strlen(buf) + 1);
+            snprintf(buf, sizeof(buf), "%s  %s", SDL_IsGameController(i) ? "[pad]" : "[joy]",
+                     name ? name : "(unknown)");
+            labels[i] = SDL_strdup(buf);
         }
-        GraphPresent2 gp;
-        if (!graph_present2_open(&gp, "sdl2-jstest — select device")) {
-            for (int i = 0; i < njoy; ++i) free(labels[i]);
-            free(labels); return 1;
-        }
-        gp.ui.menu_selected = 0;
-        int sel = -1, done = 0, exit_app = 0;
-        while (!done && !g_app_quit) {
-            graph_ui_draw_menu(&gp.ui, "Select joystick / gamecontroller",
-                               (const char* const*)labels, njoy);
-            graph_present2_frame(&gp);
-            SDL_Event event;
-            while (SDL_PollEvent(&event)) {
-                int mkey = 0;
-                TestUIAction act = TEST_UI_CONTINUE;
-                if (event.type == SDL_QUIT) {
-                    exit_app = 1;
-                    g_app_quit = 1;
-                    done = 1;
-                    break;
+        labels[njoy] = SDL_strdup(njoy ? "Quit" : "Quit   (no devices yet: connect one, it shows up here)");
+        gui->ui.menu_numbered = njoy;
+
+        int choice = -2;  /* -2: stay */
+        SDL_Event event;
+        while (choice == -2 && SDL_PollEvent(&event)) {
+            int pick = -1;
+            gui_track_pads(gui, &event);
+            switch (gui_action(gui, &event, true, &pick)) {
+            case GUI_UP: graph_ui_menu_key(&gui->ui, GRAPH_UI_KEY_UP, nitems); break;
+            case GUI_DOWN: graph_ui_menu_key(&gui->ui, GRAPH_UI_KEY_DOWN, nitems); break;
+            case GUI_CONFIRM: choice = gui->ui.menu_selected; break;
+            case GUI_PICK:
+                if (pick >= 0 && pick < nitems) {
+                    gui->ui.menu_selected = pick;
+                    choice = pick;
                 }
-                if (graph_present2_map_key(&event, &mkey, &act)) {
-                    if (act == TEST_UI_QUIT) {
-                        exit_app = 1;
-                        g_app_quit = 1;
-                        done = 1;
-                        break;
-                    }
-                    int r = graph_ui_menu_key(&gp.ui, mkey, njoy);
-                    if (r == -1) { sel = -1; done = 1; }
-                    else if (r >= 0) { sel = r; done = 1; }
-                }
+                break;
+            case GUI_BACK: case GUI_QUIT: choice = -1; break;
+            default: break;
             }
-            SDL_Delay(16);
         }
-        graph_present2_close(&gp);
-        for (int i = 0; i < njoy; ++i) free(labels[i]);
+        if (choice >= njoy) choice = -1;  /* "Quit", or a device that left */
+        if (choice == -2) {
+            graph_ui_draw_menu(&gui->ui, "Select joystick / gamecontroller",
+                               (const char* const*)labels, nitems);
+            gui_present(gui);
+        }
+        for (int i = 0; i < nitems; ++i) SDL_free(labels[i]);
         free(labels);
-        if (exit_app || g_app_quit)
-            return 1;
-        if (sel < 0)
-            return 0;
-        int left;
-        if (SDL_IsGameController(sel))
-            left = gui_test_gamecontroller(sel);
-        else
-            left = gui_test_joystick(sel);
-        if (left || g_app_quit)
-            return 1;
+        if (choice != -2) return choice;
     }
 }
 
-static int interactive_menu(void)
+static GuiAction gui_test_device(Gui* gui, int idx)
 {
-    for (;;)
-    {
-        int njoy = SDL_NumJoysticks();
-        char** labels = calloc((size_t)(njoy > 0 ? njoy : 1), sizeof(char*));
-        int* is_gc = calloc((size_t)(njoy > 0 ? njoy : 1), sizeof(int));
-        for (int i = 0; i < njoy; ++i)
-        {
-            char buf[256];
-            const char* name = SDL_JoystickNameForIndex(i);
-            int gc = SDL_IsGameController(i);
-            is_gc[i] = gc;
-            snprintf(buf, sizeof(buf), "%s  %s",
-                     gc ? "[pad]" : "[joy]",
-                     name ? name : "(unknown)");
-            labels[i] = malloc(strlen(buf) + 1);
-            if (labels[i])
-                memcpy(labels[i], buf, strlen(buf) + 1);
+    return SDL_IsGameController(idx) ? gui_test_gamecontroller(gui, idx) : gui_test_joystick(gui, idx);
+}
+
+/* --gui [JOYNUM], and the default without a terminal UI. With JOYNUM,
+   leaving the device view ends the program. */
+static int gui_run(const JstestOptions* opts)
+{
+    Gui gui;
+    if (!gui_open(&gui, opts)) return EXIT_FAILURE;
+    if (opts->joy_idx >= 0) {
+        gui_test_device(&gui, opts->joy_idx);
+    } else {
+        for (;;) {
+            int sel = gui_menu(&gui);
+            if (sel < 0) break;
+            if (gui_test_device(&gui, sel) == GUI_QUIT) break;
+            gui.ui.hint = NULL;
         }
-
-        TestUI ui;
-        test_ui_init(&ui);
-        int sel = test_ui_menu_select(&ui, "Select joystick / gamecontroller",
-                                      (const char* const*)labels, njoy);
-        test_ui_shutdown(&ui);
-
-        for (int i = 0; i < njoy; ++i)
-            free(labels[i]);
-        free(labels);
-        free(is_gc);
-
-        if (sel < 0)
-            return 0;
-
-        if (SDL_IsGameController(sel))
-            test_gamecontroller(sel);
-        else
-            test_joystick(sel);
-        /* Esc from test returns here and reopens menu */
     }
+    gui_close(&gui);
+    return EXIT_SUCCESS;
+}
+
+/* ---- Startup ---- */
+
+/* gamecontrollerdb.txt, read through SDL (Android: APK asset) and kept for
+   the report's mapping sources. */
+typedef struct MappingDb {
+    char path[4200];
+    char* text;
+    int count;          /* mappings added, -1 on error */
+    char error[256];
+} MappingDb;
+
+static void load_mapping_db(MappingDb* db, const DataDir* data_dir)
+{
+    memset(db, 0, sizeof(*db));
+    db->count = -1;
+    if (!platform_data_file(data_dir, "gamecontrollerdb.txt", db->path, sizeof(db->path))) {
+        snprintf(db->error, sizeof(db->error), "no data directory");
+        return;
+    }
+    SDL_RWops* rw = SDL_RWFromFile(db->path, "rb");
+    Sint64 size = rw ? SDL_RWsize(rw) : -1;
+    if (rw && size >= 0) {
+        db->text = malloc((size_t)size + 1);
+        if (db->text && SDL_RWread(rw, db->text, 1, (size_t)size) == (size_t)size) {
+            db->text[size] = '\0';
+            db->count = SDL_GameControllerAddMappingsFromRW(SDL_RWFromConstMem(db->text, (int)size), 1);
+        }
+    }
+    if (db->count < 0)
+        snprintf(db->error, sizeof(db->error), "%s: %s", db->path, SDL_GetError());
+    if (rw) SDL_RWclose(rw);
+}
+
+static void report_startup(const DataDir* data_dir, const MappingDb* db)
+{
+    char lib[512];
+    SDL_version linked, compiled;
+    SDL_GetVersion(&linked);
+    SDL_VERSION(&compiled);
+    const char* mapped = report_mapped_library("libSDL2", lib, sizeof(lib));
+    report_line("sdl", "%d.%d.%d (built against %d.%d.%d), %s%s%s", linked.major, linked.minor,
+                linked.patch, compiled.major, compiled.minor, compiled.patch, SDL_GetRevision(),
+                mapped ? ", " : "", mapped ? mapped : "");
+    report_ncurses();
+    report_line("data", "%s (%s)", data_dir->path[0] ? data_dir->path : "-", data_dir->source);
+    if (db->count >= 0)
+        report_line("gamecontrollerdb", "%d mappings from %s", db->count, db->path);
+    else
+        report_line("gamecontrollerdb", "%s; using SDL's built-in mappings only", db->error);
+
+    char drivers[256] = "";
+    for (int i = 0; i < SDL_GetNumVideoDrivers(); ++i) {
+        size_t len = strlen(drivers);
+        snprintf(drivers + len, sizeof(drivers) - len, "%s%s", i ? " " : "", SDL_GetVideoDriver(i));
+    }
+    report_line("video drivers", "%s; current %s", drivers,
+                SDL_GetCurrentVideoDriver() ? SDL_GetCurrentVideoDriver() : "none");
+    char renderers[256] = "";
+    for (int i = 0; i < SDL_GetNumRenderDrivers(); ++i) {
+        SDL_RendererInfo info;
+        if (SDL_GetRenderDriverInfo(i, &info) != 0) continue;
+        size_t len = strlen(renderers);
+        snprintf(renderers + len, sizeof(renderers) - len, "%s%s", len ? " " : "", info.name);
+    }
+    report_line("render drivers", "%s", renderers);
+
+    int njoy = SDL_NumJoysticks();
+    report_line("joysticks", "%d, %d haptic devices, %d touch devices", njoy, SDL_NumHaptics(),
+                SDL_GetNumTouchDevices());
+    for (int i = 0; i < njoy; ++i) {
+        char guid[64];
+        SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(i), guid, sizeof(guid));
+        char topic[32];
+        snprintf(topic, sizeof(topic), "joystick %d", i);
+        const char* name = SDL_JoystickNameForIndex(i);
+        report_line(topic, "%s, GUID %s", name ? name : "?", guid);
+        if (SDL_IsGameController(i)) {
+            char* mapping = SDL_GameControllerMappingForDeviceIndex(i);
+            const char* bindings = mapping ? strchr(mapping, ',') : NULL;
+            bindings = bindings ? strchr(bindings + 1, ',') : NULL;
+            snprintf(topic, sizeof(topic), "joystick %d mapping", i);
+            report_line(topic, "%s: %.120s%s",
+                        report_mapping_source(mapping, db->text, "gamecontrollerdb.txt"),
+                        bindings ? bindings + 1 : "?",
+                        bindings && strlen(bindings + 1) > 120 ? "..." : "");
+            SDL_free(mapping);
+        }
+    }
+}
+
+/* Video is needed for the event queue, but not for the terminal modes: on a
+   console without display those fall back to the dummy driver (LOG-6). */
+static bool init_sdl(JstestMode mode)
+{
+    if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC) < 0) {
+        fprintf(stderr, "error: unable to init SDL: %s\n", SDL_GetError());
+        return false;
+    }
+    if (SDL_InitSubSystem(SDL_INIT_VIDEO) < 0) {
+        if (mode == JSTEST_MODE_GUI) {
+            fprintf(stderr, "error: unable to init SDL video: %s\n", SDL_GetError());
+            return false;
+        }
+        fprintf(stderr, "video: unavailable (%s), using the dummy driver\n", SDL_GetError());
+        SDL_setenv("SDL_VIDEODRIVER", "dummy", 1);
+        if (SDL_InitSubSystem(SDL_INIT_VIDEO) < 0) {
+            fprintf(stderr, "error: unable to init SDL video: %s\n", SDL_GetError());
+            return false;
+        }
+    }
+    return true;
 }
 
 int main(int argc, char** argv)
 {
-    /* argc == 1: interactive menu (handled after SDL_Init) */
+    unsigned features = JSTEST_CLI_GAMECONTROLLER | JSTEST_CLI_RUMBLE;
+    JstestOptions opts;
+    if (!cli_parse(argc, argv, features, &opts)) {
+        fprintf(stderr, "Try '%s --help' for more information.\n", argv[0]);
+        return 2;
+    }
+#if defined(SDL_JSTEST_NCURSES)
+    const bool has_terminal_ui = true;
+#else
+    const bool has_terminal_ui = false;
+    if (opts.mode == JSTEST_MODE_DEFAULT) opts.mode = JSTEST_MODE_GUI;
+    if (opts.mode == JSTEST_MODE_TEST || opts.mode == JSTEST_MODE_GAMECONTROLLER)
+        opts.mode = JSTEST_MODE_GUI;
+#endif
 
-    // SDL2 will only report events when the window has focus, so set
-    // this hint as we don't have a window
+    DataDir data_dir;
+    if (opts.mode == JSTEST_MODE_HELP) {
+        cli_print_usage(argv[0], features, has_terminal_ui);
+        return EXIT_SUCCESS;
+    }
+    if (opts.mode == JSTEST_MODE_VERSION) {
+        printf("sdl2-jstest %s\n", SDL_JSTEST_VERSION);
+        return EXIT_SUCCESS;
+    }
+    platform_find_data_dir(&data_dir, opts.data_dir, platform_exe_dir(), SDL2_JSTEST_DATADIR);
+    if (opts.mode == JSTEST_MODE_SHOW_PATHS) {
+        platform_print_paths(&data_dir);
+        return EXIT_SUCCESS;
+    }
+
+    /* Android starts main() again in the same process. */
+    g_app_quit = 0;
+
+    report_program("sdl2-jstest", SDL_JSTEST_VERSION);
+    report_system(SDL_GetPlatform(), SDL_GetCPUCount(), SDL_GetSystemRAM());
+    report_env();
+
+    // Without a window, SDL2 only reports joystick events with this hint.
     SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
+    // Android: the Back key arrives as SDLK_AC_BACK instead of closing.
+    SDL_SetHint(SDL_HINT_ANDROID_TRAP_BACK_BUTTON, "1");
+    if (!init_sdl(opts.mode)) return EXIT_FAILURE;
+    app_install_quit_handlers();
 
-    // FIXME: We don't need video, but without it SDL will fail to work in SDL_WaitEvent()
-    if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC) < 0)
-    {
-        fprintf(stderr, "Unable to init SDL: %s\n", SDL_GetError());
-        exit(1);
-    }
-    else
-    {
-        atexit(SDL_Quit);
-        app_install_quit_handlers();
+    MappingDb db;
+    load_mapping_db(&db, &data_dir);
+    report_startup(&data_dir, &db);
 
-        {
-            int ret = SDL_GameControllerAddMappingsFromFile(SDL2_JSTEST_DATADIR "/gamecontrollerdb.txt");
-            if (ret < 0)
-            {
-                ret = SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
-            }
-
-            if (ret < 0)
-            {
-                fprintf(stderr, "error: failed to read gamecontrollerdb.txt: %s\n", SDL_GetError());
-            }
-        }
-
-        if (argc == 1)
-        {
-            interactive_menu();
-        }
-        else if (argc == 2 && (strcmp(argv[1], "--help") == 0 ||
-            strcmp(argv[1], "-h") == 0))
-        {
-            print_help(argv[0]);
-        }
-        else if (argc == 2 && (strcmp(argv[1], "--version") == 0))
-        {
-            printf("sdl2-jstest %s\n", SDL_JSTEST_VERSION);
-            exit(EXIT_SUCCESS);
-        }
-        else if (argc == 2 && (strcmp(argv[1], "--list") == 0 ||
-            (strcmp(argv[1], "-l") == 0)))
-        {
-            list_joysticks();
-        }
-        else if (argc == 3 && (strcmp(argv[1], "--gamecontroller") == 0 ||
-            strcmp(argv[1], "-g") == 0))
-        {
-            int idx;
-            if (!str2int(argv[2], &idx))
-            {
-                fprintf(stderr, "Error: JOYSTICKNUM argument must be a number, but was '%s'\n", argv[2]);
-                exit(1);
-            }
-            else
-            {
-                test_gamecontroller(idx);
-            }
-        }
-        else if (argc == 3 && (strcmp(argv[1], "--test") == 0 ||
-            strcmp(argv[1], "-t") == 0))
-        {
-            int joy_idx;
-            if (!str2int(argv[2], &joy_idx))
-            {
-                fprintf(stderr, "Error: JOYSTICKNUM argument must be a number, but was '%s'\n", argv[2]);
-                exit(1);
-            }
-            else
-            {
-                test_joystick(joy_idx);
-            }
-        }
-        else if (argc == 3 && (strcmp(argv[1], "--event") == 0 ||
-            strcmp(argv[1], "-e") == 0))
-        {
-            int joy_idx;
-            if (!str2int(argv[2], &joy_idx))
-            {
-                fprintf(stderr, "Error: JOYSTICKNUM argument must be a number, but was '%s'\n", argv[2]);
-                exit(1);
-            }
-            event_joystick(joy_idx);
-        }
-        else if (argc == 3 && (strcmp(argv[1], "--rumble") == 0 ||
-            strcmp(argv[1], "-r") == 0))
-        {
-            int idx;
-            if (!str2int(argv[2], &idx))
-            {
-                fprintf(stderr, "Error: JOYSTICKNUM argument must be a number, but was '%s'\n", argv[2]);
-                exit(1);
-            }
-            else
-            {
-                test_rumble(idx);
-            }
-        }
-        else if ((argc == 2 || argc == 3) &&
-                 (strcmp(argv[1], "--gui") == 0 || strcmp(argv[1], "-G") == 0))
-        {
-            if (argc == 2)
-                gui_interactive_menu();
-            else {
-                int joy_idx;
-                if (!str2int(argv[2], &joy_idx)) {
-                    fprintf(stderr, "Error: JOYSTICKNUM argument must be a number, but was '%s'\n", argv[2]);
-                    exit(1);
-                }
-                if (SDL_IsGameController(joy_idx))
-                    gui_test_gamecontroller(joy_idx);
-                else
-                    gui_test_joystick(joy_idx);
-            }
-        }
-        else
-        {
-            fprintf(stderr, "%s: unknown arguments\n", argv[0]);
-            fprintf(stderr, "Try '%s --help' for more informations\n", argv[0]);
-        }
+    int status = EXIT_SUCCESS;
+    switch (opts.mode) {
+    case JSTEST_MODE_LIST:
+        list_joysticks();
+        break;
+    case JSTEST_MODE_GUI:
+        status = gui_run(&opts);
+        break;
+    case JSTEST_MODE_EVENT:
+        event_joystick(opts.joy_idx);
+        break;
+    case JSTEST_MODE_RUMBLE:
+        test_rumble(opts.joy_idx);
+        break;
+#if defined(SDL_JSTEST_NCURSES)
+    case JSTEST_MODE_DEFAULT:
+        interactive_menu();
+        break;
+    case JSTEST_MODE_TEST:
+        test_joystick(opts.joy_idx);
+        break;
+    case JSTEST_MODE_GAMECONTROLLER:
+        test_gamecontroller(opts.joy_idx);
+        break;
+#endif
+    default:
+        break;
     }
 
-    return EXIT_SUCCESS;
+    free(db.text);
+    SDL_Quit();
+    return status;
 }
 
 /* EOF */

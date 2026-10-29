@@ -1,32 +1,35 @@
 # TODO / handoff
 
-## Tip
-Work line base: `cf4fab3`
-Current tip: see `git log -1`
+## Current work line: ports + gamepkgstd (started 2026-10-29, base `fb44667`)
 
-## Done this session
-- Glyph bit order fixed (LSB-left); default window 640x480 with compact layout
-- Fixed graph_ui -Wpedantic/-Wformat-truncation for Nix -Werror builds
-Optional SDL window joystick test (`-G` / `--gui [JOYNUM]`) for all three binaries.
+Goal: sdl-jstest on R36S (PortMaster), Android (SDL2 and SDL3 APKs),
+Windows (incl. SDL3) next to the native build, following gamepkgstd
+(`~/projects/gamepkgstd/trunk/gamepkgstd`). SDL3 on Android / R36S doubles
+as a test of SDL3 on those targets for other projects (xanatoo).
 
-### Shared
-- `src/ui/graph_ui.{h,c}` — ARGB8888 software UI (axes, buttons, hats, balls, event log, menu)
-- CMakeLists links `graph_ui.c` into sdl1/2/3-jstest
+Plan, one commit (or a few) per step:
 
-### Per-binary presenters + CLI
-- **sdl2**: `GraphPresent2` (Window/Renderer/Texture), `gui_test_joystick`, `gui_test_gamecontroller`, `gui_interactive_menu`
-- **sdl3**: `GraphPresent3`, `gui_test_joystick`, `gui_interactive_menu`
-- **sdl1**: `GraphPresent1` (SDL_SetVideoMode + surface blit), `gui_test_joystick`, `gui_interactive_menu`
+1. Shared `src/common/`: GNU-style option parsing before SDL_Init (OPT-1,
+   OPT-2), data directory for gamecontrollerdb.txt (DIR-3: `--data-dir`,
+   `<exe>/../share/sdl-jstest`, Windows `data/`, compiled-in path; Android
+   assets), startup report on stderr (LOG-1..7).
+2. GUI for devices without keyboard: one window for the whole session,
+   640×480 buffer scaled with aspect kept, `--fullscreen`, gamepad / touch /
+   Android Back navigation, hotplug-aware device menu, ncurses optional
+   (Android has none; GUI is the default then).
+3. Packaging: VER-5 version, flake checks (FLAKE-9..12), dev shell (DEV),
+   metainfo + PNG icons (INT).
+4. R36S: eoan sysroot (xanatoo's `nix/r36s.nix`), SDL1 + SDL2 against the
+   device libraries, SDL3 built for KMSDRM and shipped in `libs/`,
+   PortMaster port with one launcher per binary.
+5. Android: `sdl2-jstest-android`, `sdl3-jstest-android` (ndk-build after
+   xanatoo's `nix/android.nix`).
+6. Windows SDL3.
+7. Web (wasm) — only if the blocking loops can be handled (WEB-1/3).
 
-Usage:
-```
-sdl2-jstest --gui          # device menu in SDL window
-sdl2-jstest --gui 0        # test device 0 in window
-sdl2-jstest --test 0       # existing ncurses path unchanged
-```
+## Earlier: optional SDL window joystick test (`-G` / `--gui [JOYNUM]`)
 
-## Follow-ups (optional)
-- Man pages for `--gui`
-- SDL3 gamepad-labelled button groups in GUI (currently raw joystick view for `--gui N`)
-- Restore DualSense trigger-effect cycling in SDL2 gamecontroller GUI path if desired
-- Resize window → recreate texture / letterbox (currently fixed 960×720 buffer stretched by renderer)
+- `src/ui/graph_ui.{h,c}` — ARGB8888 software UI (axes, buttons, hats,
+  balls, event log, menu), linked into sdl1/2/3-jstest
+- Follow-ups: SDL3 gamepad-labelled button groups in GUI, DualSense
+  trigger-effect cycling in the SDL2 GUI path

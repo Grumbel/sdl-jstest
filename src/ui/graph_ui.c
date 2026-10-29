@@ -187,6 +187,7 @@ bool graph_ui_init(GraphUI* ui, int width, int height)
     ui->pixels = calloc((size_t)width * (size_t)height, sizeof(uint32_t));
     if (!ui->pixels) return false;
     ui->dirty = true;
+    ui->menu_numbered = -1;
     graph_ui_log(ui, "Event log ready — device activity appears here.");
     return true;
 }
@@ -295,7 +296,22 @@ void graph_ui_draw_joystick(GraphUI* ui, const char* name, int joy_idx,
     int max_x = ui->w - margin - pad, max_y = status_h - 6;
     int label_w = 80; /* space for "nn +32767 " before axis bar */
 
-    draw_text(ui, x, y, name ? name : "(unknown)", COL_CYAN);
+    /* "Menu" button for touch and mouse, top right of the status panel. */
+    ui->back_w = text_width("Menu") + 16;
+    ui->back_h = 20;
+    ui->back_x = ui->w - margin - pad - ui->back_w;
+    ui->back_y = margin + pad - 4;
+    fill_rect(ui, ui->back_x, ui->back_y, ui->back_w, ui->back_h, COL_BTN_OFF);
+    draw_rect_outline(ui, ui->back_x, ui->back_y, ui->back_w, ui->back_h, COL_BORDER);
+    draw_text(ui, ui->back_x + 8, ui->back_y + 6, "Menu", COL_TEXT);
+
+    {
+        char title[128];
+        snprintf(title, sizeof(title), "%s", name ? name : "(unknown)");
+        int max_chars = (ui->back_x - 8 - x) / 8;
+        if (max_chars > 0 && (int)strlen(title) > max_chars) title[max_chars] = '\0';
+        draw_text(ui, x, y, title, COL_CYAN);
+    }
     y += 12;
     char meta[128];
     snprintf(meta, sizeof(meta), "Index %d  Axes %d  Buttons %d  Hats %d  Balls %d",
@@ -378,8 +394,15 @@ void graph_ui_draw_joystick(GraphUI* ui, const char* name, int joy_idx,
         }
     }
 
-    if (status_h - 14 > y)
-        draw_text(ui, x, status_h - 14, "Esc/q: menu   Ctrl-C or close window: exit app", COL_DIM);
+    if (status_h - 14 > y) {
+        const char* hint = ui->hint ? ui->hint : "Esc/q: menu   Ctrl-C or close window: exit app";
+        draw_text(ui, x, status_h - 14, hint, COL_DIM);
+    }
+    if (ui->hold_progress > 0.0f) {
+        int bw = max_x - x;
+        fill_rect(ui, x, status_h - 4, bw, 3, COL_BAR_BG);
+        fill_rect(ui, x, status_h - 4, (int)((float)bw * ui->hold_progress), 3, COL_YELLOW);
+    }
     draw_event_log(ui, margin, status_h, ui->w - 2 * margin, events_h);
     ui->dirty = false;
 }
@@ -395,26 +418,41 @@ void graph_ui_draw_menu(GraphUI* ui, const char* title,
     int x = margin + pad, y = margin + pad;
     draw_text(ui, x, y, title ? title : "Select device", COL_CYAN);
     y += 14;
-    draw_text(ui, x, y, "Up/Down  Enter  Esc/q quit", COL_DIM);
+    draw_text(ui, x, y, ui->hint ? ui->hint : "Up/Down  Enter  Esc/q quit", COL_DIM);
     y += 18;
+    ui->menu_items = n_items > 0 ? n_items : 0;
+    ui->menu_visible = 0;
     if (n_items <= 0) {
         draw_text(ui, x, y, "(no devices detected)", COL_TEXT);
     } else {
         int line_h = 18;
         int visible = (ui->h - y - 40) / line_h;
         if (visible < 1) visible = 1;
+        if (ui->menu_selected >= n_items) ui->menu_selected = n_items - 1;
+        if (ui->menu_selected < 0) ui->menu_selected = 0;
         int start = 0;
         if (ui->menu_selected >= start + visible)
             start = ui->menu_selected - visible + 1;
         if (ui->menu_selected < start) start = ui->menu_selected;
+        ui->menu_x = x - 4;
+        ui->menu_y = y - 2;
+        ui->menu_w = ui->w - 2 * margin - 24;
+        ui->menu_line_h = line_h;
+        ui->menu_start = start;
+        ui->menu_visible = visible;
         for (int i = 0; i < visible && start + i < n_items; ++i) {
             int idx = start + i, row = y + i * line_h;
             if (idx == ui->menu_selected)
                 fill_rect(ui, x - 4, row - 2, ui->w - 2 * margin - 24, line_h, COL_SEL_BG);
             char line[256];
-            snprintf(line, sizeof(line), "%s %2d  %s",
-                     idx == ui->menu_selected ? ">" : " ", idx,
-                     items[idx] ? items[idx] : "?");
+            if (ui->menu_numbered < 0 || idx < ui->menu_numbered)
+                snprintf(line, sizeof(line), "%s %2d  %s",
+                         idx == ui->menu_selected ? ">" : " ", idx,
+                         items[idx] ? items[idx] : "?");
+            else
+                snprintf(line, sizeof(line), "%s     %s",
+                         idx == ui->menu_selected ? ">" : " ",
+                         items[idx] ? items[idx] : "?");
             int max_chars = (ui->w - 2 * margin - 40) / 8;
             if (max_chars > 0 && (int)strlen(line) > max_chars) line[max_chars] = '\0';
             draw_text(ui, x, row, line, COL_TEXT);
@@ -445,4 +483,20 @@ int graph_ui_menu_key(GraphUI* ui, int key, int n_items)
         return -2;
     }
     return -2;
+}
+
+int graph_ui_menu_hit(const GraphUI* ui, int x, int y)
+{
+    if (ui->menu_visible <= 0 || ui->menu_line_h <= 0) return -1;
+    if (x < ui->menu_x || x >= ui->menu_x + ui->menu_w || y < ui->menu_y) return -1;
+    int row = (y - ui->menu_y) / ui->menu_line_h;
+    if (row >= ui->menu_visible) return -1;
+    int idx = ui->menu_start + row;
+    return idx < ui->menu_items ? idx : -1;
+}
+
+bool graph_ui_back_hit(const GraphUI* ui, int x, int y)
+{
+    return ui->back_w > 0 && x >= ui->back_x && x < ui->back_x + ui->back_w &&
+           y >= ui->back_y && y < ui->back_y + ui->back_h;
 }

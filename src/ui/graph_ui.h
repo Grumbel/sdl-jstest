@@ -25,6 +25,16 @@ typedef struct GraphUI {
     int log_len, log_head;
     bool dirty;
     int menu_selected;
+    /* Set by the caller before drawing: the key help line, and how far a
+       hold-to-leave is (0..1, drawn as a bar when > 0). */
+    const char* hint;
+    float hold_progress;
+    /* Menu rows from this index on are commands ("Quit") without a device
+       number; -1: all rows are numbered. */
+    int menu_numbered;
+    /* Written while drawing, for pointer hit tests. */
+    int menu_x, menu_y, menu_w, menu_line_h, menu_start, menu_visible, menu_items;
+    int back_x, back_y, back_w, back_h;
 } GraphUI;
 
 bool graph_ui_init(GraphUI* ui, int width, int height);
@@ -41,6 +51,10 @@ void graph_ui_draw_joystick(GraphUI* ui, const char* name, int joy_idx,
     const uint8_t* hats, int num_hats, const int16_t* balls, int num_balls);
 void graph_ui_draw_menu(GraphUI* ui, const char* title, const char* const* items, int n_items);
 int graph_ui_menu_key(GraphUI* ui, int key, int n_items);
+/* Menu row under (x, y) in buffer pixels from the last draw, or -1. */
+int graph_ui_menu_hit(const GraphUI* ui, int x, int y);
+/* Whether (x, y) is on the device view's "Menu" button. */
+bool graph_ui_back_hit(const GraphUI* ui, int x, int y);
 
 #ifdef __cplusplus
 }
