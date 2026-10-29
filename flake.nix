@@ -57,7 +57,16 @@
           native = nativePackages pkgs;
         in native // {
           default = native.sdl-jstest;
-        });
+        } // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux (
+          # R36S / ArkOS PortMaster port (cross to aarch64, eoan sysroot).
+          let r36s = import ./nix/r36s.nix { inherit pkgs version sdl_gamecontrollerdb; };
+          in {
+            sdl-jstest-r36s = r36s.r36s;
+            sdl-jstest-r36s-portmaster = r36s.portmaster;
+            sdl-jstest-r36s-portmaster-zip = r36s.portmasterZip;
+            sdl3-r36s = r36s.sdl3;
+            sdl12-compat-r36s = r36s.sdl12compat;
+          }));
 
       # FLAKE-5: `nix run` starts sdl2-jstest; each program by name.
       apps = forAllSystems (system:

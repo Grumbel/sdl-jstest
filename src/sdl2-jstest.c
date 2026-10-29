@@ -1273,6 +1273,17 @@ static void report_startup(const DataDir* data_dir, const MappingDb* db)
    console without display those fall back to the dummy driver (LOG-6). */
 static bool init_sdl(JstestMode mode)
 {
+    /* Sensors, touchpads, SDL_POLLSENTINEL, ... are called unconditionally;
+       a binary built against newer headers (R36S) must not run them on an
+       older library (ArkOS' default is 2.0.10). */
+    SDL_version linked;
+    SDL_GetVersion(&linked);
+    if (SDL_VERSIONNUM(linked.major, linked.minor, linked.patch) < SDL_VERSIONNUM(2, 0, 18)) {
+        fprintf(stderr, "error: SDL %d.%d.%d is too old, sdl2-jstest needs 2.0.18 or newer\n",
+                linked.major, linked.minor, linked.patch);
+        return false;
+    }
+
     if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC) < 0) {
         fprintf(stderr, "error: unable to init SDL: %s\n", SDL_GetError());
         return false;

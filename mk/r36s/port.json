@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "name": "sdl-jstest.zip",
+  "items": ["SDL1 Joystick Test.sh", "SDL2 Joystick Test.sh", "SDL3 Joystick Test.sh", "sdl-jstest"],
+  "items_opt": null,
+  "attr": {
+    "title": "SDL Joystick Test",
+    "desc": "Shows what SDL 1.2, SDL2 and SDL3 see of the joysticks and gamepads: axes, buttons, hats, gamepad mappings, events.",
+    "inst": "Ready to run. Version @version@. Hold any button for two seconds to leave a test view; Quit in the device menu exits.",
+    "genres": ["utilities"],
+    "porter": ["Ingo Ruhnke"],
+    "image": {},
+    "rtr": true,
+    "runtime": null,
+    "reqs": [],
+    "arch": ["aarch64"]
+  }
+}
