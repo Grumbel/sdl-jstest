@@ -15,6 +15,7 @@
 #include "common/report.h"
 #include "ui/graph_ui.h"
 #include "ui/gui_nav.h"
+#include "icons/sdl3_jstest_icon.h"
 #if defined(SDL_JSTEST_NCURSES)
 #  include <curses.h>
 #  define DUALSENSE_GAMEPAD_TYPE SDL_Gamepad
@@ -751,6 +752,9 @@ static void test_rumble(int joy_idx)
     }
 }
 
+/* Display name (gamepkgstd INT-2): window title, launcher, metainfo. */
+#define DISPLAY_NAME "SDL3 Joystick Test"
+
 /* ---- Window UI ----
    One window for the whole session (Android and KMSDRM have one surface):
    the 640x480 GraphUI buffer scaled to it with the aspect ratio kept. */
@@ -829,11 +833,20 @@ static bool gui_open(Gui* gui, const JstestOptions* opts)
     if (opts->fullscreen == 1) flags |= SDL_WINDOW_FULLSCREEN;
     int w = opts->width > 0 ? opts->width : gui->ui.w;
     int h = opts->height > 0 ? opts->height : gui->ui.h;
-    gui->win = SDL_CreateWindow("sdl3-jstest", w, h, flags);
+    gui->win = SDL_CreateWindow(DISPLAY_NAME, w, h, flags);
     if (!gui->win) {
         fprintf(stderr, "error: SDL_CreateWindow: %s\n", SDL_GetError());
         graph_ui_shutdown(&gui->ui);
         return false;
+    }
+    /* X11 only; Wayland takes the icon from the .desktop file (INT-9). */
+    static uint32_t icon[SDL3_JSTEST_ICON_SIZE * SDL3_JSTEST_ICON_SIZE];
+    memcpy(icon, sdl3_jstest_icon, sizeof(icon));
+    SDL_Surface* icon_surface = SDL_CreateSurfaceFrom(SDL3_JSTEST_ICON_SIZE, SDL3_JSTEST_ICON_SIZE,
+        SDL_PIXELFORMAT_ARGB8888, icon, SDL3_JSTEST_ICON_SIZE * 4);
+    if (icon_surface) {
+        SDL_SetWindowIcon(gui->win, icon_surface);
+        SDL_DestroySurface(icon_surface);
     }
     gui->ren = SDL_CreateRenderer(gui->win, NULL);
     if (!gui->ren) {
@@ -970,7 +983,7 @@ static bool gui_view_hold_done(Gui* gui)
 static void gui_view_begin(Gui* gui, const char* name)
 {
     char title[160];
-    snprintf(title, sizeof(title), "sdl3-jstest - %s", name ? name : "joystick");
+    snprintf(title, sizeof(title), DISPLAY_NAME " - %s", name ? name : "joystick");
     SDL_SetWindowTitle(gui->win, title);
     memset(&gui->hold, 0, sizeof(gui->hold));
     gui->ui.hint = kViewHint;
@@ -1148,7 +1161,7 @@ static GuiAction gui_test_gamepad(Gui* gui, int idx)
    -1 to quit. */
 static int gui_menu(Gui* gui)
 {
-    SDL_SetWindowTitle(gui->win, "sdl3-jstest - select device");
+    SDL_SetWindowTitle(gui->win, DISPLAY_NAME " - select device");
     gui->ui.hint = "Up/Down  Enter/A: open  Esc/B: quit";
     gui->ui.hold_progress = 0.0f;
     memset(&gui->stick, 0, sizeof(gui->stick));
@@ -1376,6 +1389,8 @@ int main(int argc, char** argv)
     SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
     // Android: the Back key arrives as SDLK_AC_BACK instead of closing.
     SDL_SetHint(SDL_HINT_ANDROID_TRAP_BACK_BUTTON, "1");
+    // The identifier is the X11 WM_CLASS and Wayland app_id (INT-3).
+    SDL_SetAppMetadata(DISPLAY_NAME, SDL_JSTEST_VERSION, "sdl3-jstest");
     if (!init_sdl(opts.mode)) return EXIT_FAILURE;
     app_install_quit_handlers();
 

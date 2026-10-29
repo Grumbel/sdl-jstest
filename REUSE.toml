@@ -16,7 +16,7 @@ SPDX-FileCopyrightText = "2026 Ingo Ruhnke <grumbel@gmail.com>"
 SPDX-License-Identifier = "GPL-3.0-or-later"
 
 [[annotations]]
-path = ["data/**.svg"]
+path = ["data/icons/**"]
 SPDX-FileCopyrightText = "2023-2026 Ingo Ruhnke <grumbel@gmail.com>"
 SPDX-License-Identifier = "GPL-3.0-or-later"
 
@@ -62,3 +62,14 @@ SPDX-License-Identifier = "GPL-3.0-or-later"
 path = ["data/*.desktop"]
 SPDX-FileCopyrightText = "2026 Ingo Ruhnke <grumbel@gmail.com>"
 SPDX-License-Identifier = "GPL-3.0-or-later"
+
+[[annotations]]
+path = ["TODO.md"]
+SPDX-FileCopyrightText = "2026 Ingo Ruhnke <grumbel@gmail.com>"
+SPDX-License-Identifier = "GPL-3.0-or-later"
+
+[[annotations]]
+path = ["external/sdl_gamecontrollerdb/**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "1997-2025 Sam Lantinga <slouken@libsdl.org>"
+SPDX-License-Identifier = "Zlib"

@@ -18,6 +18,7 @@
 #include "common/report.h"
 #include "ui/graph_ui.h"
 #include "ui/gui_nav.h"
+#include "icons/sdl1_jstest_icon.h"
 #if defined(SDL_JSTEST_NCURSES)
 #  include "ui/test_ui.h"
 #endif
@@ -283,6 +284,9 @@ static void interactive_menu(void)
 }
 #endif /* SDL_JSTEST_NCURSES */
 
+/* Display name (gamepkgstd INT-2): window title, launcher, metainfo. */
+#define DISPLAY_NAME "SDL1 Joystick Test"
+
 /* ---- Window UI ----
    One video surface for the whole session (on a framebuffer console it is
    the screen): the 640x480 GraphUI buffer is scaled into it in software,
@@ -354,7 +358,16 @@ static bool gui_open(Gui* gui, const JstestOptions* opts)
 {
     memset(gui, 0, sizeof(*gui));
     if (!graph_ui_init(&gui->ui, GRAPH_UI_DEFAULT_W, GRAPH_UI_DEFAULT_H)) return false;
-    SDL_WM_SetCaption("sdl1-jstest", NULL);
+    SDL_WM_SetCaption(DISPLAY_NAME, NULL);
+    /* Before SDL_SetVideoMode, as SDL 1.2 wants it. */
+    static uint32_t icon[SDL1_JSTEST_ICON_SIZE * SDL1_JSTEST_ICON_SIZE];
+    memcpy(icon, sdl1_jstest_icon, sizeof(icon));
+    SDL_Surface* icon_surface = SDL_CreateRGBSurfaceFrom(icon, SDL1_JSTEST_ICON_SIZE, SDL1_JSTEST_ICON_SIZE,
+        32, SDL1_JSTEST_ICON_SIZE * 4, 0x00FF0000u, 0x0000FF00u, 0x000000FFu, 0xFF000000u);
+    if (icon_surface) {
+        SDL_WM_SetIcon(icon_surface, NULL);
+        SDL_FreeSurface(icon_surface);
+    }
     int w = opts->width > 0 ? opts->width : gui->ui.w;
     int h = opts->height > 0 ? opts->height : gui->ui.h;
     if (opts->fullscreen == 1) {
@@ -534,7 +547,7 @@ static GuiAction gui_test_joystick(Gui* gui, int joy_idx)
 
     const char* name = SDL_JoystickName(joy_idx);
     char title[160];
-    snprintf(title, sizeof(title), "sdl1-jstest - %s", name ? name : "joystick");
+    snprintf(title, sizeof(title), DISPLAY_NAME " - %s", name ? name : "joystick");
     SDL_WM_SetCaption(title, NULL);
     gui_reset_input(gui);
     gui->ui.hint = "Esc / click Menu / hold any button 2 s: menu";
@@ -611,7 +624,7 @@ static char* strdup_or_empty(const char* s)
    is fixed. Returns the joystick index, or -1 to quit. */
 static int gui_menu(Gui* gui)
 {
-    SDL_WM_SetCaption("sdl1-jstest - select device", NULL);
+    SDL_WM_SetCaption(DISPLAY_NAME " - select device", NULL);
     gui->ui.hint = "Up/Down  Enter: open  Esc: quit  Button: next  Hold: open";
     gui_reset_input(gui);
 
@@ -786,6 +799,8 @@ int main(int argc, char** argv)
     report_system(NULL, -1, -1);
     report_env();
 
+    /* X11 WM_CLASS (INT-3); read when the video subsystem starts. */
+    platform_setenv("SDL_VIDEO_X11_WMCLASS", "sdl1-jstest");
     if (!init_sdl(opts.mode)) return EXIT_FAILURE;
     app_install_quit_handlers();
     report_startup(&data_dir);

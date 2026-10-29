@@ -1,55 +1,93 @@
-.Dd June 16, 2014
+.Dd October 30, 2026
 .Dt SDL1-JSTEST 1
 .Os
 .Sh NAME
 .Nm sdl1-jstest
-.Nd joystick test application for SDL
+.Nd test joysticks through SDL 1.2
 .Sh SYNOPSIS
-.Nm sdl1-jstest
-.Op Fl Fl help
-.Op Fl Fl version
-.Op Fl Fl list
-.Op Fl Fl test Ar JOYNUM
-.Op Fl Fl event Ar JOYNUM
+.Nm
+.Op Fl f | w
+.Op Fl Fl geometry Ar W Ns x Ns Ar H
+.Op Fl Fl data-dir Ar dir
+.Op Ar mode
 .Sh DESCRIPTION
+.Nm
+shows the joysticks SDL 1.2 detects, their axes, buttons, hats and balls,
+and displays their state or the events they send, the way programs
+built with SDL 1.2 see them, instead of reading the raw
+.Pa /dev/input
+devices.
+.Pp
+Without a mode option
+.Nm
+opens a device menu: in the terminal when built with ncurses,
+otherwise in a window.
+.Ss Modes
 .Bl -tag -width Ds
+.It Fl l , Fl Fl list
+List the joysticks and their properties.
+.It Fl t Ar JOYNUM , Fl Fl test Ar JOYNUM
+Show the state of joystick
+.Ar JOYNUM
+in the terminal (ncurses builds; otherwise the same as
+.Fl Fl gui ) .
+.It Fl G , Fl Fl gui Op Ar JOYNUM
+Show the device menu in a window, or with
+.Ar JOYNUM
+that device's state; leaving its view then ends the program.
+.It Fl e Ar JOYNUM , Fl Fl event Ar JOYNUM
+Print the events received from the joystick until interrupted.
 .It Fl h , Fl Fl help
-Display help text and exit.
-.It Fl Fl version
-Display the version number and exit.
-.It Fl Fl list
-Search for available joysticks and list their properties.
-.It Fl Fl test Ar JOYNUM
-Display a graphical representation of the current joystick state.
-.It Fl Fl event Ar JOYNUM
-Display the events that are received from the joystick.
+Print the usage and exit.
+.It Fl v , Fl Fl version
+Print the version and exit.
+.It Fl Fl show-paths
+Print the data directory and where it was found, then exit.
 .El
-.Sh ENVIRONMENT
-What SDL detects as axis, what is treated as a hat and what is
-handled as normal axis can be configured with the environment
-variable
-.Ev SDL_LINUX_JOYSTICK :
+.Ss Options
 .Bl -tag -width Ds
-.It Ev SDL_LINUX_JOYSTICK
-Special joystick configuration string for Unix.
-The format is
-.Qq Ar name numaxes numhats numballs
-where
-.Ar name
-is the name string of the joystick (possibly in single quotes),
-and the rest are the number of axes, hats and balls respectively.
+.It Fl Fl data-dir Ar dir
+Use
+.Ar dir
+as the data directory (sdl1-jstest reads no data; the option exists
+for symmetry with its siblings).
+.It Fl f , Fl Fl fullscreen
+Open the window fullscreen.
+.It Fl w , Fl Fl windowed
+Open the window windowed (the default).
+.It Fl Fl geometry Ar W Ns x Ns Ar H
+Window size; the default is 640x480.
+The display is scaled to the window with its aspect ratio kept.
 .El
+.Sh WINDOW CONTROLS
+In the menu, the arrow keys move, Enter opens a device and Esc quits;
+a mouse click or a tap opens a row, the last row quits.
+On a joystick the stick or hat moves, pressing a button steps to the
+next row and holding a button for one second opens the selected one.
 .Pp
-A complete list of which environment variables SDL supports can be found at:
-.Lk http://sdl.beuc.net/sdl.wiki/SDL_envvars
-.Sh EXAMPLES
-A simple example would be:
-.D1 $ export SDL_LINUX_JOYSTICK="\(aqXbox Gamepad (userspace driver)\(aq 6 0 0"
-.Pp
-Which makes all axes be handled as normal axis and none as hat,
-as most games don't use hats.
+A device view is left with Esc, the
+.Dq Menu
+button at the top right, or by holding any button for two seconds.
+Ctrl-C quits everywhere.
+.Sh ENVIRONMENT
+.Bl -tag -width Ds
+.It Ev SDL_VIDEODRIVER
+The video driver.
+Without a usable display the terminal modes fall back to
+.Dq dummy .
+.El
+.Sh EXIT STATUS
+0 on success, 1 when SDL or the window cannot be initialised, 2 on
+invalid command line options.
+.Sh DIAGNOSTICS
+At startup
+.Nm
+prints a report to standard error: version, build, system, SDL
+environment variables, the SDL library in use, the video and renderer
+drivers and every joystick
+found.
 .Sh SEE ALSO
 .Xr jstest 1 ,
 .Xr jstest-gtk 1 ,
 .Xr sdl2-jstest 1 ,
-.Xr xboxdrv 1
+.Xr sdl3-jstest 1

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-FileCopyrightText: 2026 Ingo Ruhnke <grumbel@gmail.com> -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<component type="desktop-application">
+  <id>sdl3-jstest</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>SDL3 Joystick Test</name>
+  <summary>Test joysticks and gamepads through SDL 3</summary>
+  <description>
+    <p>Shows the joysticks SDL 3 detects, with their axes, buttons, hats and balls, and displays their state and events live, the way games built with SDL 3 see them.</p>
+    <p>For gamepads it also shows the gamepad mapping, where the mapping came from, and lets you test rumble.</p>
+  </description>
+  <launchable type="desktop-id">sdl3-jstest.desktop</launchable>
+  <url type="homepage">https://github.com/grumbel/sdl-jstest</url>
+  <url type="bugtracker">https://github.com/grumbel/sdl-jstest/issues</url>
+  <developer>
+    <name>Ingo Ruhnke</name>
+  </developer>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/grumbel/sdl-jstest/master/doc/screenshots/screenshot-0.3.0.png</image>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1"/>
+  <provides>
+    <binary>sdl3-jstest</binary>
+  </provides>
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+    <control>gamepad</control>
+    <control>touch</control>
+  </supports>
+  <releases>
+    <release version="0.2.2" date="2023-07-11"/>
+    <release version="0.2.1" date="2018-07-04"/>
+  </releases>
+</component>

@@ -1,5 +1,4 @@
-{ self
-, stdenv
+{ stdenv
 , lib
 
 , SDL ? null
@@ -8,10 +7,8 @@
 , ncurses
 , cmake
 , pkg-config
-, appstream-glib
-, mcfgthreads ? null
 
-, tinycmmc
+, version
 , sdl_gamecontrollerdb
 
   # Which binaries to build (maps to CMake BUILD_SDL*_JSTEST)
@@ -26,10 +23,6 @@ assert buildSdl2 -> SDL2 != null;
 assert buildSdl3 -> SDL3 != null;
 
 let
-  versionBase = lib.strings.removeSuffix "\n" (builtins.readFile ./VERSION);
-  gitRev = "${self.shortRev or self.dirtyShortRev or "dirty"}";
-  version = "${versionBase}+g${gitRev}";
-
   pname =
     if buildSdl && buildSdl2 && buildSdl3 then "sdl-jstest"
     else if buildSdl3 && !buildSdl && !buildSdl2 then "sdl3-jstest"
@@ -42,9 +35,11 @@ stdenv.mkDerivation {
 
   src = ./.;
 
+  # CTest unit tests (gamepkgstd FLAKE-7); skipped automatically when cross.
   doCheck = true;
 
   cmakeFlags = [
+    "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
     "-DWARNINGS=ON"
     "-DWERROR=ON"
     "-DPROJECT_VERSION_FULL=${version}"
@@ -53,32 +48,11 @@ stdenv.mkDerivation {
     "-DBUILD_SDL3_JSTEST=${if buildSdl3 then "ON" else "OFF"}"
   ];
 
-  patchPhase = lib.optionalString (buildSdl2 || buildSdl3) ''
-    # Nix behaves differently on a dirty git repository than on a clean one,
-    # so we have to check.
-    if [ -d external/sdl_gamecontrollerdb ]; then
-      rm -rv external/sdl_gamecontrollerdb
-    fi
+  # The newest mappings from the flake input instead of the copy in the tree.
+  postPatch = lib.optionalString (buildSdl2 || buildSdl3) ''
+    rm -rf external/sdl_gamecontrollerdb
     mkdir -p external/
     ln -s "${sdl_gamecontrollerdb}" external/sdl_gamecontrollerdb
-  '';
-
-  postFixup = lib.optionalString stdenv.hostPlatform.isWindows ''
-    mkdir -p $out/bin/
-    find ${stdenv.cc.cc} -iname "*.dll" -exec ln -sfv {} $out/bin/ \;
-    ${lib.optionalString (mcfgthreads != null) ''
-      find ${mcfgthreads} -iname "*.dll" -exec ln -sfv {} $out/bin/ \;
-    ''}
-    ${lib.optionalString buildSdl3 ''
-      ln -sfv ${SDL3}/bin/*.dll $out/bin/ || true
-    ''}
-    ${lib.optionalString buildSdl2 ''
-      ln -sfv ${SDL2}/bin/*.dll $out/bin/
-    ''}
-    ${lib.optionalString buildSdl ''
-      ln -sfv ${SDL}/bin/*.dll $out/bin/
-    ''}
-    ln -sfv ${ncurses.dev}/bin/*.dll $out/bin/
   '';
 
   nativeBuildInputs = [
@@ -88,9 +62,19 @@ stdenv.mkDerivation {
 
   buildInputs = [
     ncurses
-    tinycmmc
   ]
   ++ lib.optional buildSdl SDL
   ++ lib.optional buildSdl2 SDL2
   ++ lib.optional buildSdl3 SDL3;
+
+  meta = {
+    description = "Test joysticks and game controllers through SDL 1.2, SDL2 and SDL3";
+    homepage = "https://github.com/grumbel/sdl-jstest";
+    license = lib.licenses.gpl3Plus;
+    platforms = lib.platforms.unix;
+    mainProgram =
+      if buildSdl2 then "sdl2-jstest"
+      else if buildSdl3 then "sdl3-jstest"
+      else "sdl1-jstest";
+  };
 }

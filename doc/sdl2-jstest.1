@@ -1,36 +1,115 @@
-.Dd June 16, 2014
+.Dd October 30, 2026
 .Dt SDL2-JSTEST 1
 .Os
 .Sh NAME
 .Nm sdl2-jstest
-.Nd joystick test application for SDL2
+.Nd test joysticks and game controllers through SDL2
 .Sh SYNOPSIS
-.Nm sdl2-jstest
-.Op Fl Fl help
-.Op Fl Fl version
-.Op Fl Fl list
-.Op Fl Fl test Ar JOYNUM
-.Op Fl Fl gamecontroller Ar IDX
-.Op Fl Fl event Ar JOYNUM
-.Op Fl Fl rumble Ar JOYNUM
+.Nm
+.Op Fl f | w
+.Op Fl Fl geometry Ar W Ns x Ns Ar H
+.Op Fl Fl data-dir Ar dir
+.Op Ar mode
 .Sh DESCRIPTION
+.Nm
+shows the joysticks SDL2 detects, their axes, buttons, hats and balls,
+and displays their state or the events they send, the way programs
+built with SDL2 see them, instead of reading the raw
+.Pa /dev/input
+devices.
+For devices with a GameController mapping it also shows the mapped
+buttons and axes and where the mapping came from.
+.Pp
+Without a mode option
+.Nm
+opens a device menu: in the terminal when built with ncurses,
+otherwise in a window.
+.Ss Modes
 .Bl -tag -width Ds
-.It Fl h , Fl Fl help
-Display help text and exit.
-.It Fl Fl version
-Display the version number and exit.
 .It Fl l , Fl Fl list
-Search for available joysticks and list their properties.
+List the joysticks and their properties.
 .It Fl t Ar JOYNUM , Fl Fl test Ar JOYNUM
-Display a graphical representation of the current joystick state.
-.It Fl g Ar IDX , Fl Fl gamecontroller Ar IDX
-Test the given GameController interface.
+Show the state of joystick
+.Ar JOYNUM
+in the terminal (ncurses builds; otherwise the same as
+.Fl Fl gui ) .
+.It Fl g Ar JOYNUM , Fl Fl gamecontroller Ar JOYNUM
+Show the GameController state of
+.Ar JOYNUM
+in the terminal (ncurses builds; otherwise the same as
+.Fl Fl gui ) .
+.It Fl G , Fl Fl gui Op Ar JOYNUM
+Show the device menu in a window, or with
+.Ar JOYNUM
+that device's state; leaving its view then ends the program.
 .It Fl e Ar JOYNUM , Fl Fl event Ar JOYNUM
-Display the events that are received from the joystick.
+Print the events received from the joystick until interrupted.
 .It Fl r Ar JOYNUM , Fl Fl rumble Ar JOYNUM
+Rumble the joystick for three seconds.
+.It Fl h , Fl Fl help
+Print the usage and exit.
+.It Fl v , Fl Fl version
+Print the version and exit.
+.It Fl Fl show-paths
+Print the data directory and where it was found, then exit.
 .El
+.Ss Options
+.Bl -tag -width Ds
+.It Fl Fl data-dir Ar dir
+Read
+.Pa gamecontrollerdb.txt
+from
+.Ar dir .
+.It Fl f , Fl Fl fullscreen
+Open the window fullscreen.
+.It Fl w , Fl Fl windowed
+Open the window windowed (the default).
+.It Fl Fl geometry Ar W Ns x Ns Ar H
+Window size; the default is 640x480.
+The display is scaled to the window with its aspect ratio kept.
+.El
+.Sh WINDOW CONTROLS
+In the menu, the arrow keys move, Enter opens a device and Esc quits;
+a mouse click or a tap opens a row, the last row quits.
+On a gamepad the D-pad or left stick moves, A or Start opens and B or
+Back quits.
+.Pp
+A device view is left with Esc, the Android Back key, the
+.Dq Menu
+button at the top right, or by holding the gamepad's Back / Select
+button for one second, so that every other button stays testable.
+Ctrl-C quits everywhere.
+.Sh ENVIRONMENT
+.Bl -tag -width Ds
+.It Ev SDL_GAMECONTROLLERCONFIG , Ev SDL_GAMECONTROLLERCONFIG_FILE
+Extra controller mappings, read by SDL; the startup report says which
+source each device's mapping came from.
+.It Ev SDL_VIDEODRIVER
+The video driver.
+Without a usable display the terminal modes fall back to
+.Dq dummy .
+.El
+.Sh FILES
+.Bl -tag -width Ds
+.It Pa gamecontrollerdb.txt
+Controller mappings in the data directory: the
+.Fl Fl data-dir
+option, else
+.Pa ../share/sdl-jstest
+relative to the executable, else the install prefix.
+.El
+.Sh EXIT STATUS
+0 on success, 1 when SDL or the window cannot be initialised, 2 on
+invalid command line options.
+.Sh DIAGNOSTICS
+At startup
+.Nm
+prints a report to standard error: version, build, system, SDL
+environment variables, the SDL library in use, the video and renderer
+drivers and every joystick
+with its GUID and mapping source.
 .Sh SEE ALSO
 .Xr jstest 1 ,
 .Xr jstest-gtk 1 ,
 .Xr sdl1-jstest 1 ,
-.Xr xboxdrv 1
+.Xr sdl3-jstest 1
