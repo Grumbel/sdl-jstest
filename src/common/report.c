@@ -21,6 +21,8 @@
 #  include <unistd.h>
 #endif
 #if defined(__ANDROID__)
+#  include <android/log.h>
+#  include <pthread.h>
 #  include <sys/system_properties.h>
 #endif
 #if defined(SDL_JSTEST_NCURSES)
@@ -318,11 +320,13 @@ const char* platform_exe_dir(void)
     return dir;
 }
 
+#if !defined(__ANDROID__)
 static bool is_dir(const char* path)
 {
     struct stat st;
     return stat(path, &st) == 0 && (st.st_mode & S_IFMT) == S_IFDIR;
 }
+#endif
 
 void platform_find_data_dir(DataDir* out, const char* option, const char* exe_dir,
                             const char* compiled_in)
@@ -381,6 +385,52 @@ void platform_setenv(const char* name, const char* value)
     _putenv_s(name, value);
 #else
     setenv(name, value, 1);
+#endif
+}
+
+#if defined(__ANDROID__)
+static const char* logcat_tag;
+static int logcat_fd = -1;
+
+static void* logcat_reader(void* arg)
+{
+    (void)arg;
+    char line[1024];
+    size_t len = 0;
+    char buf[512];
+    ssize_t n;
+    while ((n = read(logcat_fd, buf, sizeof(buf))) > 0) {
+        for (ssize_t i = 0; i < n; ++i) {
+            if (buf[i] == '\n' || len == sizeof(line) - 1) {
+                line[len] = '\0';
+                __android_log_write(ANDROID_LOG_INFO, logcat_tag, line);
+                len = 0;
+                if (buf[i] == '\n') continue;
+            }
+            line[len++] = buf[i];
+        }
+    }
+    return NULL;
+}
+#endif
+
+void platform_log_to_logcat(const char* tag)
+{
+#if defined(__ANDROID__)
+    int fds[2];
+    if (pipe(fds) != 0) return;
+    logcat_tag = tag;
+    logcat_fd = fds[0];
+    setvbuf(stdout, NULL, _IOLBF, 0);
+    setvbuf(stderr, NULL, _IOLBF, 0);
+    dup2(fds[1], STDOUT_FILENO);
+    dup2(fds[1], STDERR_FILENO);
+    close(fds[1]);
+    pthread_t thread;
+    if (pthread_create(&thread, NULL, logcat_reader, NULL) == 0)
+        pthread_detach(thread);
+#else
+    (void)tag;
 #endif
 }
 

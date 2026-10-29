@@ -6,9 +6,15 @@
 
     sdl_gamecontrollerdb.url = "github:gabomdq/SDL_GameControllerDB";
     sdl_gamecontrollerdb.flake = false;
+
+    # SDL2 for the Android build (nixpkgs' SDL2 is sdl2-compat over SDL3).
+    sdl2-src = {
+      url = "https://github.com/libsdl-org/SDL/releases/download/release-2.32.10/SDL2-2.32.10.tar.gz";
+      flake = false;
+    };
   };
 
-  outputs = { self, nixpkgs, sdl_gamecontrollerdb }:
+  outputs = { self, nixpkgs, sdl_gamecontrollerdb, sdl2-src }:
     let
       lib = nixpkgs.lib;
       systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
@@ -34,6 +40,37 @@
         doCheck = false;
       });
 
+      # Android (Linux hosts): the SDK and NDK are unfree. Android 5.0
+      # (API 21) is the minimum; SDL3's Java side compiles against API 35.
+      androidFor = system:
+        let
+          androidPkgs = import nixpkgs {
+            inherit system;
+            config.allowUnfree = true;
+            config.android_sdk.accept_license = true;
+          };
+        in import ./nix/android.nix {
+          pkgs = androidPkgs;
+          inherit version sdl_gamecontrollerdb;
+          sdl2Src = sdl2-src;
+          sdl2Version = "2.32.10";
+          buildToolsVersion = "35.0.0";
+          packagePlatform = "21";
+          compilePlatform = "35";
+          targetAbis = [ "armeabi-v7a" "arm64-v8a" "x86_64" ];
+          androidSdk = (androidPkgs.androidenv.composeAndroidPackages {
+            platformVersions = [ "21" "35" ];
+            buildToolsVersions = [ "35.0.0" ];
+            includeNDK = true;
+            ndkVersion = "29.0.14206865";
+            includeEmulator = false;
+            includeSources = false;
+          }).androidsdk;
+          # Last commit time: also set for dirty trees (revCount is not), so
+          # local test builds install over committed ones.
+          versionCode = self.lastModified or 1;
+        };
+
       nativePackages = pkgs:
         let
           callSdlJstest = args: pkgs.callPackage ./sdl-jstest.nix ({
@@ -58,9 +95,16 @@
         in native // {
           default = native.sdl-jstest;
         } // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux (
-          # R36S / ArkOS PortMaster port (cross to aarch64, eoan sysroot).
-          let r36s = import ./nix/r36s.nix { inherit pkgs version sdl_gamecontrollerdb; };
+          # R36S / ArkOS PortMaster port (cross to aarch64, eoan sysroot),
+          # Android APKs.
+          let
+            r36s = import ./nix/r36s.nix { inherit pkgs version sdl_gamecontrollerdb; };
+            android = androidFor system;
           in {
+            sdl2-jstest-android = android.sdl2Apk;
+            sdl3-jstest-android = android.sdl3Apk;
+            sdl2-android = android.sdl2Libs;
+            sdl3-android = android.sdl3Libs;
             sdl-jstest-r36s = r36s.r36s;
             sdl-jstest-r36s-portmaster = r36s.portmaster;
             sdl-jstest-r36s-portmaster-zip = r36s.portmasterZip;
@@ -80,6 +124,9 @@
         in lib.genAttrs programs app // {
           default = app "sdl2-jstest";
           sdl-jstest = app "sdl2-jstest";
+        } // lib.optionalAttrs nixpkgs.legacyPackages.${system}.stdenv.hostPlatform.isLinux {
+          install-android-sdl2-jstest = (androidFor system).installSdl2;
+          install-android-sdl3-jstest = (androidFor system).installSdl3;
         });
 
       # gamepkgstd FLAKE-9..12: `nix flake check` builds every package,

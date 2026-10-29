@@ -19,7 +19,21 @@
     "root": {
       "inputs": {
         "nixpkgs": "nixpkgs",
+        "sdl2-src": "sdl2-src",
         "sdl_gamecontrollerdb": "sdl_gamecontrollerdb"
+      }
+    },
+    "sdl2-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1756762407,
+        "narHash": "sha256-7RcethHbOB/ww7Xfe1XRiz/Y+6xCR7N9e9RFENYHs1s=",
+        "type": "tarball",
+        "url": "https://github.com/libsdl-org/SDL/releases/download/release-2.32.10/SDL2-2.32.10.tar.gz"
+      },
+      "original": {
+        "type": "tarball",
+        "url": "https://github.com/libsdl-org/SDL/releases/download/release-2.32.10/SDL2-2.32.10.tar.gz"
       }
     },
     "sdl_gamecontrollerdb": {

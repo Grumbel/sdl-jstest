@@ -75,6 +75,6 @@ SPDX-FileCopyrightText = "1997-2025 Sam Lantinga <slouken@libsdl.org>"
 SPDX-License-Identifier = "Zlib"
 
 [[annotations]]
-path = ["mk/r36s/port.json"]
+path = ["mk/r36s/port.json", "mk/android/keystore/debug.keystore"]
 SPDX-FileCopyrightText = "2026 Ingo Ruhnke <grumbel@gmail.com>"
 SPDX-License-Identifier = "GPL-3.0-or-later"

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: 2026 Ingo Ruhnke <grumbel@gmail.com> -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- build-apk.sh fills in the id, label, version name and code. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="@APP_ID@"
+    android:versionCode="@VERSION_CODE@"
+    android:versionName="@VERSION_NAME@">
+
+    <uses-sdk android:minSdkVersion="@MIN_SDK@" android:targetSdkVersion="33" />
+
+    <uses-feature android:glEsVersion="0x00020000" android:required="true" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <uses-feature android:name="android.hardware.gamepad" android:required="false" />
+    <uses-feature android:name="android.hardware.usb.host" android:required="false" />
+    <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
+    <!-- Rumble on the phone itself / gamepads routed through Vibrator. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <application
+        android:label="@APP_LABEL@"
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="true"
+        android:debuggable="true"
+        android:hasCode="true">
+        <!-- debuggable: debug-signed development build. -->
+        <activity
+            android:name="org.libsdl.app.SDLActivity"
+            android:label="@APP_LABEL@"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="orientation|keyboardHidden|keyboard|navigation|screenSize|screenLayout|uiMode"
+            android:launchMode="singleTask"
+            android:alwaysRetainTaskState="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

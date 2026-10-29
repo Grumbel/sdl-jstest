@@ -1219,9 +1219,11 @@ static void report_startup(const DataDir* data_dir, const MappingDb* db)
     SDL_GetVersion(&linked);
     SDL_VERSION(&compiled);
     const char* mapped = report_mapped_library("libSDL2", lib, sizeof(lib));
-    report_line("sdl", "%d.%d.%d (built against %d.%d.%d), %s%s%s", linked.major, linked.minor,
-                linked.patch, compiled.major, compiled.minor, compiled.patch, SDL_GetRevision(),
-                mapped ? ", " : "", mapped ? mapped : "");
+    /* The revision is empty in builds from a plain source tree (Android). */
+    const char* rev = SDL_GetRevision();
+    report_line("sdl", "%d.%d.%d (built against %d.%d.%d)%s%s%s%s", linked.major, linked.minor,
+                linked.patch, compiled.major, compiled.minor, compiled.patch,
+                *rev ? ", " : "", rev, mapped ? ", " : "", mapped ? mapped : "");
     report_ncurses();
     report_line("data", "%s (%s)", data_dir->path[0] ? data_dir->path : "-", data_dir->source);
     if (db->count >= 0)
@@ -1305,6 +1307,7 @@ static bool init_sdl(JstestMode mode)
 
 int main(int argc, char** argv)
 {
+    platform_log_to_logcat("sdl2-jstest");
     unsigned features = JSTEST_CLI_GAMECONTROLLER | JSTEST_CLI_RUMBLE;
     JstestOptions opts;
     if (!cli_parse(argc, argv, features, &opts)) {
