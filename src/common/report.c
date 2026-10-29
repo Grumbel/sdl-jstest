@@ -169,8 +169,10 @@ void report_system(const char* sdl_platform, int cpus, int ram)
     os_description(sdl_platform, os, sizeof(os));
     if (cpus < 0) cpus = cpu_count();
     if (ram < 0) ram = ram_mb();
-    report_line("system", "%s, %s, %d CPUs, %d MB RAM",
-                sdl_platform ? sdl_platform : "?", os, cpus, ram);
+    if (sdl_platform)
+        report_line("system", "%s, %s, %d CPUs, %d MB RAM", sdl_platform, os, cpus, ram);
+    else
+        report_line("system", "%s, %d CPUs, %d MB RAM", os, cpus, ram);
 }
 
 static void env_line(const char* entry)
@@ -371,6 +373,15 @@ const char* platform_data_file(const DataDir* dir, const char* name, char* buf, 
     if (!dir->path[0]) return NULL;
     snprintf(buf, size, "%s/%s", dir->path, name);
     return buf;
+}
+
+void platform_setenv(const char* name, const char* value)
+{
+#if defined(_WIN32)
+    _putenv_s(name, value);
+#else
+    setenv(name, value, 1);
+#endif
 }
 
 void platform_print_paths(const DataDir* dir)

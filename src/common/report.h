@@ -24,7 +24,7 @@ void report_line(const char* topic, const char* fmt, ...)
 void report_program(const char* program, const char* version);
 
 /* "system: <SDL platform>, <OS / kernel>, <cpus>, <ram>"; cpus / ram_mb
-   below 0 are looked up here. */
+   below 0 are looked up here, sdl_platform may be NULL (SDL 1.2). */
 void report_system(const char* sdl_platform, int cpus, int ram_mb);
 
 /* "env:" lines for SDL_* variables (values cut), LD_PRELOAD and
@@ -65,6 +65,9 @@ void platform_find_data_dir(DataDir* out, const char* option, const char* exe_di
    was found. On Android the plain name, which SDL resolves to the APK
    asset. */
 const char* platform_data_file(const DataDir* dir, const char* name, char* buf, size_t size);
+
+/* setenv() for strict C99 sources (SDL 1.2 has no SDL_setenv). */
+void platform_setenv(const char* name, const char* value);
 
 /* `--show-paths` output on stdout. */
 void platform_print_paths(const DataDir* dir);

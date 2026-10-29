@@ -241,9 +241,15 @@ void cli_print_usage(const char* prg, unsigned features, bool has_terminal_ui)
     printf("  -f, --fullscreen         Window modes: fullscreen\n");
     printf("  -w, --windowed           Window modes: windowed (default)\n");
     printf("      --geometry WxH       Window size (default 640x480)\n");
-    printf("\nIn the window: arrow keys, Enter and Esc; gamepad D-pad, A and B;\n"
-           "touch or mouse. Leave a device view with Esc, the Back key, tapping\n"
-           "'Menu', or holding the gamepad's Back / Select button for a second.\n");
+    if (features & JSTEST_CLI_GAMECONTROLLER)
+        printf("\nIn the window: arrow keys, Enter and Esc; gamepad D-pad, A and B;\n"
+               "touch or mouse. Leave a device view with Esc, the Back key, tapping\n"
+               "'Menu', or holding the gamepad's Back / Select button for a second.\n");
+    else
+        printf("\nIn the window: arrow keys, Enter and Esc; mouse; on a joystick the\n"
+               "stick or hat moves, pressing a button steps to the next row and\n"
+               "holding one opens it. Leave a device view with Esc, clicking 'Menu',\n"
+               "or holding any joystick button for two seconds.\n");
     printf("\nExamples:\n");
     printf("  %s --list\n", prg);
     if (has_terminal_ui)

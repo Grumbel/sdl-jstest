@@ -419,6 +419,11 @@ void graph_ui_draw_menu(GraphUI* ui, const char* title,
     draw_text(ui, x, y, title ? title : "Select device", COL_CYAN);
     y += 14;
     draw_text(ui, x, y, ui->hint ? ui->hint : "Up/Down  Enter  Esc/q quit", COL_DIM);
+    if (ui->hold_progress > 0.0f) {
+        int bw = ui->w - 2 * (margin + pad);
+        fill_rect(ui, x, y + 10, bw, 3, COL_BAR_BG);
+        fill_rect(ui, x, y + 10, (int)((float)bw * ui->hold_progress), 3, COL_YELLOW);
+    }
     y += 18;
     ui->menu_items = n_items > 0 ? n_items : 0;
     ui->menu_visible = 0;
