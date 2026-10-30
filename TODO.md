@@ -46,6 +46,7 @@ Status (2026-10-30): all seven steps done; `nix flake check` passes.
   against the device's SDL2): the code needs 2.0.18 API.
 - Android: both APKs tested on a Fire 7 (Fire OS 5.1.1): menu, the
   accelerometer as a joystick (SDL2), Back, Quit, report in logcat.
+  sdl3-jstest with a gamepad tested by hand (2026-10-30): works.
 - Windows: win32 / win64 under Wine on Xvfb: --version, --list, window UI.
 - Web: sdl2-jstest / sdl3-jstest only (sdl12-compat needs dlopen). The
   window UI runs one frame per call (gui_frame), so no Asyncify. Tested in
