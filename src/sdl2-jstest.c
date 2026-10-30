@@ -19,6 +19,9 @@
 #include "ui/graph_ui.h"
 #include "ui/gui_nav.h"
 #include "icons/sdl2_jstest_icon.h"
+#if defined(__EMSCRIPTEN__)
+#  include <emscripten.h>
+#endif
 #if defined(SDL_JSTEST_NCURSES)
 #  include "ui/test_ui.h"
 #  include "utils/dualsense.h"
@@ -832,7 +835,10 @@ static void gui_present(Gui* gui)
     SDL_RenderClear(gui->ren);
     SDL_RenderCopy(gui->ren, gui->tex, NULL, NULL);
     SDL_RenderPresent(gui->ren);
+#if !defined(__EMSCRIPTEN__)
+    /* The browser paces the frames itself. */
     if (!gui->vsync) SDL_Delay(10);
+#endif
 }
 
 /* Keeps gui->pads in step with hotplugging. */
@@ -930,12 +936,35 @@ static void gui_view_begin(Gui* gui, const char* name)
     gui->ui.log_len = gui->ui.log_head = 0;
 }
 
-static GuiAction gui_test_joystick(Gui* gui, int joy_idx)
+/* The device view's state: the open joystick or gamecontroller and what it
+   last reported. */
+typedef struct GuiDevice {
+    int idx;
+    SDL_JoystickID iid;
+    SDL_Joystick* joy;          /* joystick view */
+    SDL_GameController* pad;    /* gamecontroller view */
+    int num_axes, num_buttons, num_hats, num_balls;
+    Sint16* axes;
+    Uint8* buttons;
+    Uint8* hats;
+    Sint16* balls;
+    const char* labels[SDL_CONTROLLER_BUTTON_MAX];
+} GuiDevice;
+
+static void gui_device_close(GuiDevice* dev)
+{
+    free(dev->balls); free(dev->hats); free(dev->buttons); free(dev->axes);
+    if (dev->pad) SDL_GameControllerClose(dev->pad);
+    if (dev->joy) SDL_JoystickClose(dev->joy);
+    memset(dev, 0, sizeof(*dev));
+}
+
+static bool gui_open_joystick(Gui* gui, GuiDevice* dev, int joy_idx)
 {
     SDL_Joystick* joy = SDL_JoystickOpen(joy_idx);
     if (!joy) {
         fprintf(stderr, "error: unable to open joystick %d: %s\n", joy_idx, SDL_GetError());
-        return GUI_BACK;
+        return false;
     }
 
     int num_axes = SDL_JoystickNumAxes(joy);
@@ -945,237 +974,308 @@ static GuiAction gui_test_joystick(Gui* gui, int joy_idx)
     if (num_axes < 0 || num_buttons < 0 || num_hats < 0 || num_balls < 0) {
         fprintf(stderr, "error: unable to query joystick layout: %s\n", SDL_GetError());
         SDL_JoystickClose(joy);
-        return GUI_BACK;
+        return false;
     }
-    Sint16* axes = calloc((size_t)num_axes + 1, sizeof(Sint16));
-    Uint8* buttons = calloc((size_t)num_buttons + 1, sizeof(Uint8));
-    Uint8* hats = calloc((size_t)num_hats + 1, sizeof(Uint8));
-    Sint16* balls = calloc((size_t)num_balls + 1, 2 * sizeof(Sint16));
-    SDL_JoystickID open_iid = SDL_JoystickInstanceID(joy);
-    for (int i = 0; i < num_axes; ++i) axes[i] = SDL_JoystickGetAxis(joy, i);
-    for (int i = 0; i < num_buttons; ++i) buttons[i] = SDL_JoystickGetButton(joy, i);
-    for (int i = 0; i < num_hats; ++i) hats[i] = SDL_JoystickGetHat(joy, i);
+    memset(dev, 0, sizeof(*dev));
+    dev->idx = joy_idx;
+    dev->iid = SDL_JoystickInstanceID(joy);
+    dev->joy = joy;
+    dev->num_axes = num_axes;
+    dev->num_buttons = num_buttons;
+    dev->num_hats = num_hats;
+    dev->num_balls = num_balls;
+    dev->axes = calloc((size_t)num_axes + 1, sizeof(Sint16));
+    dev->buttons = calloc((size_t)num_buttons + 1, sizeof(Uint8));
+    dev->hats = calloc((size_t)num_hats + 1, sizeof(Uint8));
+    dev->balls = calloc((size_t)num_balls + 1, 2 * sizeof(Sint16));
+    for (int i = 0; i < num_axes; ++i) dev->axes[i] = SDL_JoystickGetAxis(joy, i);
+    for (int i = 0; i < num_buttons; ++i) dev->buttons[i] = SDL_JoystickGetButton(joy, i);
+    for (int i = 0; i < num_hats; ++i) dev->hats[i] = SDL_JoystickGetHat(joy, i);
 
     gui_view_begin(gui, SDL_JoystickName(joy));
     graph_ui_log(&gui->ui, "Opened joystick %d '%s' (instance %d)", joy_idx,
-                 SDL_JoystickName(joy) ? SDL_JoystickName(joy) : "?", (int)open_iid);
-
-    GuiAction result = GUI_NONE;
-    while (result == GUI_NONE && !g_app_quit) {
-        SDL_Event event;
-        while (result == GUI_NONE && SDL_PollEvent(&event)) {
-            int pick = -1;
-            gui_track_pads(gui, &event);
-            GuiAction act = gui_action(gui, &event, false, &pick);
-            if (act == GUI_BACK || act == GUI_QUIT) {
-                result = act;
-                break;
-            }
-            switch (event.type) {
-            case SDL_JOYAXISMOTION:
-                if (event.jaxis.which != open_iid) break;
-                if (event.jaxis.axis < num_axes) axes[event.jaxis.axis] = event.jaxis.value;
-                graph_ui_log(&gui->ui, "%s axis=%d value=%+d",
-                    sdl_event_name(event.type), event.jaxis.axis, event.jaxis.value);
-                break;
-            case SDL_JOYBUTTONDOWN:
-            case SDL_JOYBUTTONUP:
-                if (event.jbutton.which != open_iid) break;
-                if (event.jbutton.button < num_buttons) buttons[event.jbutton.button] = event.jbutton.state;
-                graph_ui_log(&gui->ui, "%s button=%d %s",
-                    sdl_event_name(event.type), event.jbutton.button,
-                    event.jbutton.state ? "DOWN" : "UP");
-                break;
-            case SDL_JOYHATMOTION:
-                if (event.jhat.which != open_iid) break;
-                if (event.jhat.hat < num_hats) hats[event.jhat.hat] = event.jhat.value;
-                graph_ui_log(&gui->ui, "%s hat=%d value=0x%02x",
-                    sdl_event_name(event.type), event.jhat.hat, event.jhat.value);
-                break;
-            case SDL_JOYBALLMOTION:
-                if (event.jball.which != open_iid) break;
-                if (event.jball.ball < num_balls) {
-                    balls[2*event.jball.ball] = event.jball.xrel;
-                    balls[2*event.jball.ball+1] = event.jball.yrel;
-                }
-                graph_ui_log(&gui->ui, "%s ball=%d dx=%d dy=%d",
-                    sdl_event_name(event.type), event.jball.ball,
-                    event.jball.xrel, event.jball.yrel);
-                break;
-            case SDL_JOYDEVICEREMOVED:
-                if (event.jdevice.which == open_iid) {
-                    fprintf(stderr, "joystick %d: disconnected\n", joy_idx);
-                    result = GUI_BACK;
-                }
-                break;
-            default:
-                break;
-            }
-        }
-        if (result == GUI_NONE && gui_view_hold_done(gui)) result = GUI_BACK;
-        graph_ui_draw_joystick(&gui->ui, SDL_JoystickName(joy), joy_idx,
-            axes, num_axes, buttons, num_buttons, NULL, NULL, 0,
-            hats, num_hats, balls, num_balls);
-        gui_present(gui);
-    }
-    free(balls); free(hats); free(buttons); free(axes);
-    SDL_JoystickClose(joy);
-    return g_app_quit ? GUI_QUIT : result;
+                 SDL_JoystickName(joy) ? SDL_JoystickName(joy) : "?", (int)dev->iid);
+    return true;
 }
 
-static GuiAction gui_test_gamecontroller(Gui* gui, int idx)
+static bool gui_open_gamecontroller(Gui* gui, GuiDevice* dev, int idx)
 {
     SDL_GameController* pad = SDL_GameControllerOpen(idx);
-    if (!pad) return gui_test_joystick(gui, idx);
+    if (!pad) return gui_open_joystick(gui, dev, idx);
 
     SDL_Joystick* joy = SDL_GameControllerGetJoystick(pad);
-    int num_axes = SDL_CONTROLLER_AXIS_MAX;
-    int num_buttons = SDL_CONTROLLER_BUTTON_MAX;
-    Sint16 axes[SDL_CONTROLLER_AXIS_MAX];
-    Uint8 buttons[SDL_CONTROLLER_BUTTON_MAX];
-    const char* labels[SDL_CONTROLLER_BUTTON_MAX];
-    for (int i = 0; i < num_buttons; ++i) {
+    memset(dev, 0, sizeof(*dev));
+    dev->idx = idx;
+    dev->iid = joy ? SDL_JoystickInstanceID(joy) : -1;
+    dev->pad = pad;
+    dev->num_axes = SDL_CONTROLLER_AXIS_MAX;
+    dev->num_buttons = SDL_CONTROLLER_BUTTON_MAX;
+    dev->axes = calloc(SDL_CONTROLLER_AXIS_MAX, sizeof(Sint16));
+    dev->buttons = calloc(SDL_CONTROLLER_BUTTON_MAX, sizeof(Uint8));
+    for (int i = 0; i < dev->num_buttons; ++i) {
         const char* s = SDL_GameControllerGetStringForButton((SDL_GameControllerButton)i);
-        labels[i] = s ? s : "";
-        buttons[i] = SDL_GameControllerGetButton(pad, (SDL_GameControllerButton)i) ? 1 : 0;
+        dev->labels[i] = s ? s : "";
+        dev->buttons[i] = SDL_GameControllerGetButton(pad, (SDL_GameControllerButton)i) ? 1 : 0;
     }
-    for (int i = 0; i < num_axes; ++i)
-        axes[i] = SDL_GameControllerGetAxis(pad, (SDL_GameControllerAxis)i);
-    SDL_JoystickID open_iid = joy ? SDL_JoystickInstanceID(joy) : -1;
+    for (int i = 0; i < dev->num_axes; ++i)
+        dev->axes[i] = SDL_GameControllerGetAxis(pad, (SDL_GameControllerAxis)i);
 
     gui_view_begin(gui, SDL_GameControllerName(pad));
     graph_ui_log(&gui->ui, "GameController '%s' (instance %d)",
-                 SDL_GameControllerName(pad) ? SDL_GameControllerName(pad) : "?", (int)open_iid);
-
-    GuiAction result = GUI_NONE;
-    while (result == GUI_NONE && !g_app_quit) {
-        SDL_Event event;
-        while (result == GUI_NONE && SDL_PollEvent(&event)) {
-            int pick = -1;
-            gui_track_pads(gui, &event);
-            GuiAction act = gui_action(gui, &event, false, &pick);
-            if (act == GUI_BACK || act == GUI_QUIT) {
-                result = act;
-                break;
-            }
-            switch (event.type) {
-            case SDL_CONTROLLERAXISMOTION:
-                if (event.caxis.which != open_iid) break;
-                if (event.caxis.axis < num_axes) axes[event.caxis.axis] = event.caxis.value;
-                graph_ui_log(&gui->ui, "%s axis=%d (%s) value=%+d", sdl_event_name(event.type),
-                    event.caxis.axis,
-                    SDL_GameControllerGetStringForAxis((SDL_GameControllerAxis)event.caxis.axis),
-                    event.caxis.value);
-                break;
-            case SDL_CONTROLLERBUTTONDOWN:
-            case SDL_CONTROLLERBUTTONUP:
-                if (event.cbutton.which != open_iid) break;
-                if (event.cbutton.button < num_buttons) buttons[event.cbutton.button] = event.cbutton.state;
-                graph_ui_log(&gui->ui, "%s button=%d (%s) %s", sdl_event_name(event.type),
-                    event.cbutton.button, labels[event.cbutton.button < num_buttons ? event.cbutton.button : 0],
-                    event.cbutton.state ? "DOWN" : "UP");
-                break;
-            case SDL_CONTROLLERDEVICEREMOVED:
-                if (event.cdevice.which == open_iid) {
-                    fprintf(stderr, "gamecontroller %d: disconnected\n", idx);
-                    result = GUI_BACK;
-                }
-                break;
-            default:
-                break;
-            }
-        }
-        if (result == GUI_NONE && gui_view_hold_done(gui)) result = GUI_BACK;
-        TestUIButtonGroup pad_groups[] = {{0,4},{4,7},{7,11},{11,15},{15,num_buttons}};
-        int ng = num_buttons <= 15 ? 4 : 5;
-        graph_ui_draw_joystick(&gui->ui, SDL_GameControllerName(pad),
-            SDL_GameControllerGetPlayerIndex(pad),
-            axes, num_axes, buttons, num_buttons, labels, pad_groups, ng,
-            NULL, 0, NULL, 0);
-        gui_present(gui);
-    }
-    SDL_GameControllerClose(pad);
-    return g_app_quit ? GUI_QUIT : result;
+                 SDL_GameControllerName(pad) ? SDL_GameControllerName(pad) : "?", (int)dev->iid);
+    return true;
 }
 
-/* Device menu, rebuilt every frame so that hotplugging shows at once; the
-   last row quits (touch has no other way). Returns the joystick index, or
-   -1 to quit. */
-static int gui_menu(Gui* gui)
+static bool gui_open_device(Gui* gui, GuiDevice* dev, int idx)
+{
+    return SDL_IsGameController(idx) ? gui_open_gamecontroller(gui, dev, idx)
+                                     : gui_open_joystick(gui, dev, idx);
+}
+
+/* One joystick event of the device view; GUI_BACK when it left. */
+static GuiAction gui_joystick_event(GuiDevice* dev, Gui* gui, const SDL_Event* event)
+{
+    switch (event->type) {
+    case SDL_JOYAXISMOTION:
+        if (event->jaxis.which != dev->iid) break;
+        if (event->jaxis.axis < dev->num_axes) dev->axes[event->jaxis.axis] = event->jaxis.value;
+        graph_ui_log(&gui->ui, "%s axis=%d value=%+d",
+            sdl_event_name(event->type), event->jaxis.axis, event->jaxis.value);
+        break;
+    case SDL_JOYBUTTONDOWN:
+    case SDL_JOYBUTTONUP:
+        if (event->jbutton.which != dev->iid) break;
+        if (event->jbutton.button < dev->num_buttons)
+            dev->buttons[event->jbutton.button] = event->jbutton.state;
+        graph_ui_log(&gui->ui, "%s button=%d %s",
+            sdl_event_name(event->type), event->jbutton.button,
+            event->jbutton.state ? "DOWN" : "UP");
+        break;
+    case SDL_JOYHATMOTION:
+        if (event->jhat.which != dev->iid) break;
+        if (event->jhat.hat < dev->num_hats) dev->hats[event->jhat.hat] = event->jhat.value;
+        graph_ui_log(&gui->ui, "%s hat=%d value=0x%02x",
+            sdl_event_name(event->type), event->jhat.hat, event->jhat.value);
+        break;
+    case SDL_JOYBALLMOTION:
+        if (event->jball.which != dev->iid) break;
+        if (event->jball.ball < dev->num_balls) {
+            dev->balls[2*event->jball.ball] = event->jball.xrel;
+            dev->balls[2*event->jball.ball+1] = event->jball.yrel;
+        }
+        graph_ui_log(&gui->ui, "%s ball=%d dx=%d dy=%d",
+            sdl_event_name(event->type), event->jball.ball,
+            event->jball.xrel, event->jball.yrel);
+        break;
+    case SDL_JOYDEVICEREMOVED:
+        if (event->jdevice.which == dev->iid) {
+            fprintf(stderr, "joystick %d: disconnected\n", dev->idx);
+            return GUI_BACK;
+        }
+        break;
+    default:
+        break;
+    }
+    return GUI_NONE;
+}
+
+static GuiAction gui_gamecontroller_event(GuiDevice* dev, Gui* gui, const SDL_Event* event)
+{
+    switch (event->type) {
+    case SDL_CONTROLLERAXISMOTION:
+        if (event->caxis.which != dev->iid) break;
+        if (event->caxis.axis < dev->num_axes) dev->axes[event->caxis.axis] = event->caxis.value;
+        graph_ui_log(&gui->ui, "%s axis=%d (%s) value=%+d", sdl_event_name(event->type),
+            event->caxis.axis,
+            SDL_GameControllerGetStringForAxis((SDL_GameControllerAxis)event->caxis.axis),
+            event->caxis.value);
+        break;
+    case SDL_CONTROLLERBUTTONDOWN:
+    case SDL_CONTROLLERBUTTONUP:
+        if (event->cbutton.which != dev->iid) break;
+        if (event->cbutton.button < dev->num_buttons)
+            dev->buttons[event->cbutton.button] = event->cbutton.state;
+        graph_ui_log(&gui->ui, "%s button=%d (%s) %s", sdl_event_name(event->type),
+            event->cbutton.button,
+            dev->labels[event->cbutton.button < dev->num_buttons ? event->cbutton.button : 0],
+            event->cbutton.state ? "DOWN" : "UP");
+        break;
+    case SDL_CONTROLLERDEVICEREMOVED:
+        if (event->cdevice.which == dev->iid) {
+            fprintf(stderr, "gamecontroller %d: disconnected\n", dev->idx);
+            return GUI_BACK;
+        }
+        break;
+    default:
+        break;
+    }
+    return GUI_NONE;
+}
+
+/* One frame of the device view. */
+static GuiAction gui_device_frame(Gui* gui, GuiDevice* dev)
+{
+    GuiAction result = GUI_NONE;
+    SDL_Event event;
+    while (result == GUI_NONE && SDL_PollEvent(&event)) {
+        int pick = -1;
+        gui_track_pads(gui, &event);
+        GuiAction act = gui_action(gui, &event, false, &pick);
+        if (act == GUI_BACK || act == GUI_QUIT) return act;
+        result = dev->pad ? gui_gamecontroller_event(dev, gui, &event)
+                          : gui_joystick_event(dev, gui, &event);
+    }
+    if (result == GUI_NONE && gui_view_hold_done(gui)) result = GUI_BACK;
+    if (result != GUI_NONE) return result;
+
+    if (dev->pad) {
+        TestUIButtonGroup pad_groups[] = {{0,4},{4,7},{7,11},{11,15},{15,dev->num_buttons}};
+        int ng = dev->num_buttons <= 15 ? 4 : 5;
+        graph_ui_draw_joystick(&gui->ui, SDL_GameControllerName(dev->pad),
+            SDL_GameControllerGetPlayerIndex(dev->pad),
+            dev->axes, dev->num_axes, dev->buttons, dev->num_buttons, dev->labels, pad_groups, ng,
+            NULL, 0, NULL, 0);
+    } else {
+        graph_ui_draw_joystick(&gui->ui, SDL_JoystickName(dev->joy), dev->idx,
+            dev->axes, dev->num_axes, dev->buttons, dev->num_buttons, NULL, NULL, 0,
+            dev->hats, dev->num_hats, dev->balls, dev->num_balls);
+    }
+    gui_present(gui);
+    return GUI_NONE;
+}
+
+static void gui_menu_begin(Gui* gui)
 {
     SDL_SetWindowTitle(gui->win, DISPLAY_NAME " - select device");
     gui->ui.hint = "Up/Down  Enter/A: open  Esc/B: quit";
     gui->ui.hold_progress = 0.0f;
     memset(&gui->stick, 0, sizeof(gui->stick));
-    for (;;) {
-        if (g_app_quit) return -1;
-        int njoy = SDL_NumJoysticks();
-        if (njoy < 0) njoy = 0;
-        int nitems = njoy + 1;
-        char** labels = calloc((size_t)nitems, sizeof(char*));
-        for (int i = 0; i < njoy; ++i) {
-            char buf[256];
-            const char* name = SDL_JoystickNameForIndex(i);
-            snprintf(buf, sizeof(buf), "%s  %s", SDL_IsGameController(i) ? "[pad]" : "[joy]",
-                     name ? name : "(unknown)");
-            labels[i] = SDL_strdup(buf);
-        }
-        labels[njoy] = SDL_strdup(njoy ? "Quit" : "Quit   (no devices yet: connect one, it shows up here)");
-        gui->ui.menu_numbered = njoy;
+}
 
-        int choice = -2;  /* -2: stay */
-        SDL_Event event;
-        while (choice == -2 && SDL_PollEvent(&event)) {
-            int pick = -1;
-            gui_track_pads(gui, &event);
-            switch (gui_action(gui, &event, true, &pick)) {
-            case GUI_UP: graph_ui_menu_key(&gui->ui, GRAPH_UI_KEY_UP, nitems); break;
-            case GUI_DOWN: graph_ui_menu_key(&gui->ui, GRAPH_UI_KEY_DOWN, nitems); break;
-            case GUI_CONFIRM: choice = gui->ui.menu_selected; break;
-            case GUI_PICK:
-                if (pick >= 0 && pick < nitems) {
-                    gui->ui.menu_selected = pick;
-                    choice = pick;
-                }
-                break;
-            case GUI_BACK: case GUI_QUIT: choice = -1; break;
-            default: break;
+/* One frame of the device menu, rebuilt every frame so that hotplugging
+   shows at once; the last row quits (touch has no other way). Returns the
+   chosen joystick index, -1 to quit or -2 to stay. */
+static int gui_menu_frame(Gui* gui)
+{
+    int njoy = SDL_NumJoysticks();
+    if (njoy < 0) njoy = 0;
+    int nitems = njoy + 1;
+    char** labels = calloc((size_t)nitems, sizeof(char*));
+    for (int i = 0; i < njoy; ++i) {
+        char buf[256];
+        const char* name = SDL_JoystickNameForIndex(i);
+        snprintf(buf, sizeof(buf), "%s  %s", SDL_IsGameController(i) ? "[pad]" : "[joy]",
+                 name ? name : "(unknown)");
+        labels[i] = SDL_strdup(buf);
+    }
+    labels[njoy] = SDL_strdup(njoy ? "Quit" : "Quit   (no devices yet: connect one, it shows up here)");
+    gui->ui.menu_numbered = njoy;
+
+    int choice = -2;
+    SDL_Event event;
+    while (choice == -2 && SDL_PollEvent(&event)) {
+        int pick = -1;
+        gui_track_pads(gui, &event);
+        switch (gui_action(gui, &event, true, &pick)) {
+        case GUI_UP: graph_ui_menu_key(&gui->ui, GRAPH_UI_KEY_UP, nitems); break;
+        case GUI_DOWN: graph_ui_menu_key(&gui->ui, GRAPH_UI_KEY_DOWN, nitems); break;
+        case GUI_CONFIRM: choice = gui->ui.menu_selected; break;
+        case GUI_PICK:
+            if (pick >= 0 && pick < nitems) {
+                gui->ui.menu_selected = pick;
+                choice = pick;
             }
+            break;
+        case GUI_BACK: case GUI_QUIT: choice = -1; break;
+        default: break;
         }
-        if (choice >= njoy) choice = -1;  /* "Quit", or a device that left */
-        if (choice == -2) {
-            graph_ui_draw_menu(&gui->ui, "Select joystick / gamecontroller",
-                               (const char* const*)labels, nitems);
-            gui_present(gui);
+    }
+    if (choice >= njoy) choice = -1;  /* "Quit", or a device that left */
+    if (choice == -2) {
+        graph_ui_draw_menu(&gui->ui, "Select joystick / gamecontroller",
+                           (const char* const*)labels, nitems);
+        gui_present(gui);
+    }
+    for (int i = 0; i < nitems; ++i) SDL_free(labels[i]);
+    free(labels);
+    return choice;
+}
+
+/* The window UI as one frame at a time (gamepkgstd WEB-1): the menu, or
+   the view of an open device. */
+typedef struct GuiSession {
+    Gui gui;
+    GuiDevice dev;
+    bool in_device;
+    bool single;       /* --gui JOYNUM: leaving the device view ends */
+} GuiSession;
+
+/* Returns false once the session is over. */
+static bool gui_frame(GuiSession* s)
+{
+    if (g_app_quit) return false;
+    if (!s->in_device) {
+        int sel = gui_menu_frame(&s->gui);
+        if (sel == -1) return false;
+        if (sel >= 0) {
+            if (gui_open_device(&s->gui, &s->dev, sel)) s->in_device = true;
+            else gui_menu_begin(&s->gui);
         }
-        for (int i = 0; i < nitems; ++i) SDL_free(labels[i]);
-        free(labels);
-        if (choice != -2) return choice;
+        return true;
+    }
+    GuiAction act = gui_device_frame(&s->gui, &s->dev);
+    if (act == GUI_NONE) return true;
+    gui_device_close(&s->dev);
+    s->in_device = false;
+    if (act == GUI_QUIT || s->single) return false;
+    s->gui.ui.hint = NULL;
+    gui_menu_begin(&s->gui);
+    return true;
+}
+
+static void gui_end(GuiSession* s)
+{
+    if (s->in_device) gui_device_close(&s->dev);
+    gui_close(&s->gui);
+}
+
+#if defined(__EMSCRIPTEN__)
+static void gui_frame_web(void* arg)
+{
+    GuiSession* s = arg;
+    if (!gui_frame(s)) {
+        emscripten_cancel_main_loop();
+        gui_end(s);
+        SDL_Quit();
     }
 }
-
-static GuiAction gui_test_device(Gui* gui, int idx)
-{
-    return SDL_IsGameController(idx) ? gui_test_gamecontroller(gui, idx) : gui_test_joystick(gui, idx);
-}
+#endif
 
 /* --gui [JOYNUM], and the default without a terminal UI. With JOYNUM,
    leaving the device view ends the program. */
 static int gui_run(const JstestOptions* opts)
 {
-    Gui gui;
-    if (!gui_open(&gui, opts)) return EXIT_FAILURE;
+    /* Static: in the browser it outlives main(). */
+    static GuiSession s;
+    memset(&s, 0, sizeof(s));
+    if (!gui_open(&s.gui, opts)) return EXIT_FAILURE;
     if (opts->joy_idx >= 0) {
-        gui_test_device(&gui, opts->joy_idx);
-    } else {
-        for (;;) {
-            int sel = gui_menu(&gui);
-            if (sel < 0) break;
-            if (gui_test_device(&gui, sel) == GUI_QUIT) break;
-            gui.ui.hint = NULL;
+        if (!gui_open_device(&s.gui, &s.dev, opts->joy_idx)) {
+            gui_close(&s.gui);
+            return EXIT_SUCCESS;
         }
+        s.in_device = true;
+        s.single = true;
+    } else {
+        gui_menu_begin(&s.gui);
     }
-    gui_close(&gui);
+#if defined(__EMSCRIPTEN__)
+    /* Does not return: the browser calls gui_frame_web once per frame. */
+    emscripten_set_main_loop_arg(gui_frame_web, &s, 0, true);
+#else
+    while (gui_frame(&s)) {}
+    gui_end(&s);
+#endif
     return EXIT_SUCCESS;
 }
 
