@@ -22,7 +22,7 @@ Key paths:
 | `doc/` | Man pages and screenshots |
 | `data/` | Application icons (SVG) |
 | `CMakeLists.txt` | Build and install rules |
-| `external/sdl_gamecontrollerdb/` | Submodule: GameControllerDB mappings |
+| `external/sdl_gamecontrollerdb/` | git subtree of SDL_GameControllerDB (`gamecontrollerdb.txt`) |
 | `sdl-jstest.nix` / `flake.nix` | Nix packaging, checks, dev shell |
 | `nix/r36s.nix`, `mk/r36s/` | R36S / ArkOS PortMaster port (eoan sysroot, cross GCC) |
 | `nix/android.nix`, `mk/android/` | Android APKs of sdl2-jstest / sdl3-jstest (ndk-build) |
@@ -38,19 +38,25 @@ License: GPL-3.0-or-later. Version is read from `VERSION`.
 - Keep C99 style consistent with existing sources (includes, error handling, ncurses usage).
 - Preserve GPL-3.0 headers and copyright notices on modified files.
 - When touching build or packaging, keep both CMake and Nix paths working if possible.
-- Submodule `external/sdl_gamecontrollerdb` must remain a proper git submodule (do not vendor its contents into this tree unless explicitly requested).
+- `external/sdl_gamecontrollerdb` is a squashed git subtree of
+  https://github.com/gabomdq/SDL_GameControllerDB; update it with
+  `git subtree pull --prefix external/sdl_gamecontrollerdb https://github.com/gabomdq/SDL_GameControllerDB master --squash`,
+  never edit files in it. Nix builds use the `sdl_gamecontrollerdb` flake
+  input instead (`nix flake update sdl_gamecontrollerdb`).
 - Man pages and screenshots live under `doc/`; SVG icons under `data/`. Update them when CLI behavior or branding changes.
-
 - The window UI runs one frame per `gui_frame()` call (menu or device
   view in a `GuiSession`); never add a blocking loop there, the browser
   build depends on it.
 - Never hard-code the version: `VERSION` is the only place (gamepkgstd VER-5).
 - New options go into `cli.c`, its usage text and the three man pages.
+- R36S launcher (`mk/r36s/launch.sh`): never LD_PRELOAD SDL2. Its symbols
+  share names with SDL 1.2 (`SDL_PollEvent`, `SDL_JoystickOpen`, ...) and
+  would replace sdl12-compat's in sdl1-jstest; pick an SDL2 through
+  LD_LIBRARY_PATH (sdl12-compat dlopen()s `libSDL2-2.0.so.0`).
 
 ## Build reminders
 
 ```sh
-git submodule init && git submodule update
 mkdir -p build && cd build
 cmake ..
 make
