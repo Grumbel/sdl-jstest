@@ -27,6 +27,30 @@ Plan, one commit (or a few) per step:
 6. Windows SDL3.
 7. Web (wasm) — only if the blocking loops can be handled (WEB-1/3).
 
+Status (2026-10-30): all seven steps done; `nix flake check` passes.
+
+- R36S: tested on r36s-black (ArkOS, SDL2 2.30.10 preloaded by the
+  launcher): all three start fullscreen on KMSDRM, sdl2 / sdl3 on GLES2
+  (Mali-G31), the built-in pad with PortMaster's mapping. Not yet done:
+  pressing buttons in the device views on the device, installing through
+  PortMaster itself.
+- R36S, sdl1-jstest: the pad's name is "(null)". sdl12-compat opens every
+  joystick in SDL_Init and drops the name when that open fails, which it
+  does on the device although a later SDL_JoystickOpen works. Upstream
+  behaviour; not worked around.
+- sdl2-jstest on R36S is built against newer SDL2 headers (sdl2-compat's)
+  with a link stub and refuses SDL < 2.0.18 at run time; the launcher
+  preloads the newest SDL2 ArkOS ships. This departs from ARK-3 (build
+  against the device's SDL2): the code needs 2.0.18 API.
+- Android: both APKs tested on a Fire 7 (Fire OS 5.1.1): menu, the
+  accelerometer as a joystick (SDL2), Back, Quit, report in logcat.
+- Windows: win32 / win64 under Wine on Xvfb: --version, --list, window UI.
+- Web: sdl2-jstest / sdl3-jstest only (sdl12-compat needs dlopen). The
+  window UI runs one frame per call (gui_frame), so no Asyncify. Tested in
+  Chromium without a gamepad; a real pad in a browser is still to do.
+  Nothing is stored (no IDBFS) and there is nothing to pause (WEB-10).
+- Follow-ups: Android adaptive icon (INT-14, "should").
+
 ## Earlier: optional SDL window joystick test (`-G` / `--gui [JOYNUM]`)
 
 - `src/ui/graph_ui.{h,c}` — ARGB8888 software UI (axes, buttons, hats,

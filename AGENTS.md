@@ -4,7 +4,7 @@ Guidance for AI agents and automated assistants working on **sdl-jstest**.
 
 ## Project overview
 
-`sdl1-jstest`, `sdl2-jstest`, and `sdl3-jstest` are small C programs that list and test joysticks via SDL 1.2, SDL 2, and SDL 3. They show axes, buttons, hats, balls, GameController mappings, sensors, rumble, and (for DualSense) trigger effects. UI is ncurses-based. Build system is CMake; optional Nix flake support is included.
+`sdl1-jstest`, `sdl2-jstest`, and `sdl3-jstest` are small C programs that list and test joysticks via SDL 1.2, SDL 2, and SDL 3. They show axes, buttons, hats, balls, GameController mappings, sensors, rumble, and (for DualSense) trigger effects. The terminal UI is ncurses-based (optional); the window UI (`--gui`) is the default without it. Build system is CMake; the Nix flake builds every port and follows gamepkgstd (`~/projects/gamepkgstd/trunk/gamepkgstd`).
 
 Key paths:
 
@@ -15,12 +15,20 @@ Key paths:
 | `src/sdl3-jstest.c` | SDL 3 joystick / Gamepad tester |
 | `src/ui/test_ui.*` | Shared ncurses test UI (split panes, event log) |
 | `src/ui/graph_ui.*` | Shared software-framebuffer SDL window test UI |
+| `src/ui/gui_nav.*` | Window UI navigation helpers (hold-to-leave, stick as D-pad) |
+| `src/common/cli.*` | Option parsing (before SDL_Init) |
+| `src/common/report.*` | Startup report on stderr, data directory, platform glue (Windows console, Android logcat) |
 | `src/utils/dualsense.h` | DualSense (PS5) trigger-effect helpers |
 | `doc/` | Man pages and screenshots |
 | `data/` | Application icons (SVG) |
 | `CMakeLists.txt` | Build and install rules |
 | `external/sdl_gamecontrollerdb/` | Submodule: GameControllerDB mappings |
-| `sdl-jstest.nix` / `flake.nix` | Nix packaging |
+| `sdl-jstest.nix` / `flake.nix` | Nix packaging, checks, dev shell |
+| `nix/r36s.nix`, `mk/r36s/` | R36S / ArkOS PortMaster port (eoan sysroot, cross GCC) |
+| `nix/android.nix`, `mk/android/` | Android APKs of sdl2-jstest / sdl3-jstest (ndk-build) |
+| `nix/windows.nix`, `data/windows/` | Windows builds (mingw-w64), SDL built from source |
+| `nix/wasm.nix`, `mk/wasm/` | WebAssembly build of sdl2-jstest / sdl3-jstest |
+| `tools/make_icons.py` | Generates the PNG / ICO icons under `data/icons/` |
 
 License: GPL-3.0-or-later. Version is read from `VERSION`.
 
@@ -32,6 +40,12 @@ License: GPL-3.0-or-later. Version is read from `VERSION`.
 - When touching build or packaging, keep both CMake and Nix paths working if possible.
 - Submodule `external/sdl_gamecontrollerdb` must remain a proper git submodule (do not vendor its contents into this tree unless explicitly requested).
 - Man pages and screenshots live under `doc/`; SVG icons under `data/`. Update them when CLI behavior or branding changes.
+
+- The window UI runs one frame per `gui_frame()` call (menu or device
+  view in a `GuiSession`); never add a blocking loop there, the browser
+  build depends on it.
+- Never hard-code the version: `VERSION` is the only place (gamepkgstd VER-5).
+- New options go into `cli.c`, its usage text and the three man pages.
 
 ## Build reminders
 
