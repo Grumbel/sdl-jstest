@@ -46,6 +46,14 @@ set(SDL_JSTEST_BUILD_DATADIR ${CMAKE_BINARY_DIR}/share/${PROJECT_NAME})
 file(COPY external/sdl_gamecontrollerdb/gamecontrollerdb.txt
   DESTINATION ${SDL_JSTEST_BUILD_DATADIR})
 
+# Compiled-in data directory (DIR-3). In the browser it is a path in
+# Emscripten's in-memory file system, where the .data file puts it.
+if (EMSCRIPTEN)
+  set(SDL_JSTEST_DATADIR "/share/${PROJECT_NAME}")
+else ()
+  set(SDL_JSTEST_DATADIR "${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}")
+endif ()
+
 # Code shared by the three binaries: options, startup report, window UI,
 # terminal UI.
 add_library(jstest_common STATIC
@@ -81,12 +89,14 @@ if (BUILD_SDL_JSTEST)
 
   add_executable(sdl1-jstest src/sdl1-jstest.c)
   target_link_libraries(sdl1-jstest jstest_common SDL::SDL)
-  target_compile_definitions(sdl1-jstest PRIVATE SDL1_JSTEST_DATADIR="${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}")
+  target_compile_definitions(sdl1-jstest PRIVATE SDL1_JSTEST_DATADIR="${SDL_JSTEST_DATADIR}")
 
-  install(TARGETS sdl1-jstest
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-  install(FILES doc/sdl1-jstest.1
-    DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+  if (NOT EMSCRIPTEN)
+    install(TARGETS sdl1-jstest
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(FILES doc/sdl1-jstest.1
+      DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+  endif ()
 endif ()
 
 if (BUILD_SDL2_JSTEST)
@@ -111,12 +121,14 @@ if (BUILD_SDL2_JSTEST)
     target_link_libraries(sdl2-jstest SDL2::SDL2main)
   endif ()
   target_link_libraries(sdl2-jstest jstest_common SDL2::SDL2)
-  target_compile_definitions(sdl2-jstest PRIVATE SDL2_JSTEST_DATADIR="${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}")
+  target_compile_definitions(sdl2-jstest PRIVATE SDL2_JSTEST_DATADIR="${SDL_JSTEST_DATADIR}")
 
-  install(TARGETS sdl2-jstest
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-  install(FILES doc/sdl2-jstest.1
-    DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+  if (NOT EMSCRIPTEN)
+    install(TARGETS sdl2-jstest
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(FILES doc/sdl2-jstest.1
+      DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+  endif ()
 endif ()
 
 if (BUILD_SDL3_JSTEST)
@@ -124,12 +136,14 @@ if (BUILD_SDL3_JSTEST)
 
   add_executable(sdl3-jstest src/sdl3-jstest.c src/utils/dualsense.h)
   target_link_libraries(sdl3-jstest jstest_common SDL3::SDL3)
-  target_compile_definitions(sdl3-jstest PRIVATE SDL3_JSTEST_DATADIR="${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}")
+  target_compile_definitions(sdl3-jstest PRIVATE SDL3_JSTEST_DATADIR="${SDL_JSTEST_DATADIR}")
 
-  install(TARGETS sdl3-jstest
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-  install(FILES doc/sdl3-jstest.1
-    DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+  if (NOT EMSCRIPTEN)
+    install(TARGETS sdl3-jstest
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(FILES doc/sdl3-jstest.1
+      DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+  endif ()
 endif ()
 
 # Windows: GUI executables, so no console window opens (INT-12; the
@@ -152,13 +166,59 @@ if (WIN32)
   endforeach ()
 endif ()
 
-if (BUILD_SDL2_JSTEST OR BUILD_SDL3_JSTEST)
+# WebAssembly (gamepkgstd EMSCRIPTEN.md): one page per program,
+# <prog>/index.html with <prog>.js, .wasm and .data (gamecontrollerdb.txt),
+# under a top-level index.html that links them. Nothing is stored, so no
+# IndexedDB mounts (WEB-6..8); nothing runs to pause (WEB-10).
+if (EMSCRIPTEN)
+  if (NOT DEFINED SDL_JSTEST_GIT_REV)
+    execute_process(COMMAND git rev-parse --short HEAD
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                    OUTPUT_VARIABLE SDL_JSTEST_GIT_REV OUTPUT_STRIP_TRAILING_WHITESPACE
+                    RESULT_VARIABLE _git_status ERROR_QUIET)
+    if (NOT _git_status EQUAL 0 OR SDL_JSTEST_GIT_REV STREQUAL "")
+      set(SDL_JSTEST_GIT_REV "unknown")
+    endif ()
+  endif ()
+  set(SDL_JSTEST_SOURCE_URL "https://github.com/grumbel/sdl-jstest")
+  configure_file(mk/wasm/index.html ${CMAKE_CURRENT_BINARY_DIR}/web/index.html @ONLY)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/web/index.html DESTINATION .)
+  foreach (PROG sdl2-jstest sdl3-jstest)
+    if (TARGET ${PROG})
+      string(REGEX REPLACE "^sdl([0-9])-jstest$" "SDL\\1 Joystick Test" DISPLAY_NAME "${PROG}")
+      set(PROGRAM ${PROG})
+      configure_file(mk/wasm/shell.html ${CMAKE_CURRENT_BINARY_DIR}/web/${PROG}-shell.html @ONLY)
+      set_target_properties(${PROG} PROPERTIES SUFFIX ".html")
+      target_link_options(${PROG} PRIVATE
+        -sALLOW_MEMORY_GROWTH=1
+        # Emscripten 6 makes growable memory a resizable ArrayBuffer, which
+        # TextDecoder rejects; grow the classic way.
+        -sGROWABLE_ARRAYBUFFERS=0
+        -sFORCE_FILESYSTEM=1
+        -lidbfs.js
+        -sENVIRONMENT=web
+        -sEXPORTED_RUNTIME_METHODS=FS,addRunDependency,removeRunDependency
+        --shell-file ${CMAKE_CURRENT_BINARY_DIR}/web/${PROG}-shell.html
+        --preload-file ${SDL_JSTEST_BUILD_DATADIR}/gamecontrollerdb.txt@${SDL_JSTEST_DATADIR}/gamecontrollerdb.txt)
+      set_property(TARGET ${PROG} APPEND PROPERTY LINK_DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/mk/wasm/shell.html)
+      set(_web ${CMAKE_BINARY_DIR}/bin/${PROG})
+      install(FILES ${_web}.html DESTINATION ${PROG} RENAME index.html)
+      install(FILES ${_web}.js ${_web}.wasm ${_web}.data DESTINATION ${PROG})
+    endif ()
+  endforeach ()
+endif ()
+
+if ((BUILD_SDL2_JSTEST OR BUILD_SDL3_JSTEST) AND NOT EMSCRIPTEN)
   install(FILES ${SDL_JSTEST_BUILD_DATADIR}/gamecontrollerdb.txt
     DESTINATION ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME})
 endif ()
 
 # Launchers, icons, AppStream metainfo (gamepkgstd INT-6), per binary.
 foreach (_prog sdl1-jstest sdl2-jstest sdl3-jstest)
+  if (EMSCRIPTEN)
+    break ()
+  endif ()
   if ((_prog STREQUAL "sdl1-jstest" AND BUILD_SDL_JSTEST) OR
       (_prog STREQUAL "sdl2-jstest" AND BUILD_SDL2_JSTEST) OR
       (_prog STREQUAL "sdl3-jstest" AND BUILD_SDL3_JSTEST))

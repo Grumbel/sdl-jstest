@@ -1247,6 +1247,8 @@ static void gui_frame_web(void* arg)
         emscripten_cancel_main_loop();
         gui_end(s);
         SDL_Quit();
+        /* The page says so (mk/wasm/shell.html). */
+        emscripten_run_script("if (Module.onQuit) Module.onQuit();");
     }
 }
 #endif

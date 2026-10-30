@@ -77,6 +77,12 @@
         sdl2Version = "2.32.10";
       };
 
+      wasmFor = pkgs: import ./nix/wasm.nix {
+        inherit pkgs version gitRev sdl_gamecontrollerdb;
+        sdl2Src = sdl2-src;
+        sdl2Version = "2.32.10";
+      };
+
       nativePackages = pkgs:
         let
           callSdlJstest = args: pkgs.callPackage ./sdl-jstest.nix ({
@@ -102,8 +108,9 @@
           default = native.sdl-jstest;
         } // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux (
           # R36S / ArkOS PortMaster port (cross to aarch64, eoan sysroot),
-          # Android APKs, Windows (mingw-w64).
+          # Android APKs, Windows (mingw-w64), WebAssembly (Emscripten).
           let
+            wasm = wasmFor pkgs;
             r36s = import ./nix/r36s.nix { inherit pkgs version sdl_gamecontrollerdb; };
             android = androidFor system;
             win32 = windowsFor pkgs "win32" pkgs.pkgsCross.mingw32;
@@ -124,6 +131,9 @@
             sdl-jstest-r36s-portmaster-zip = r36s.portmasterZip;
             sdl3-r36s = r36s.sdl3;
             sdl12-compat-r36s = r36s.sdl12compat;
+            sdl-jstest-wasm = wasm.site;
+            sdl2-wasm = wasm.sdl2Wasm;
+            sdl3-wasm = wasm.sdl3Wasm;
           }));
 
       # FLAKE-5: `nix run` starts sdl2-jstest; each program by name.
@@ -141,6 +151,7 @@
         } // lib.optionalAttrs nixpkgs.legacyPackages.${system}.stdenv.hostPlatform.isLinux {
           install-android-sdl2-jstest = (androidFor system).installSdl2;
           install-android-sdl3-jstest = (androidFor system).installSdl3;
+          sdl-jstest-wasm = (wasmFor nixpkgs.legacyPackages.${system}).serveApp;
         });
 
       # gamepkgstd FLAKE-9..12: `nix flake check` builds every package,
@@ -244,6 +255,26 @@
                 qemu-aarch64 -L ${r36s.sysroot} $port/$prog --version)
               if [ "$out_v" != "$prog ${version}" ]; then
                 echo "$prog under qemu printed '$out_v'" >&2
+                exit 1
+              fi
+            done
+            touch $out
+          '';
+
+          # WEB-5: the site with its pages, scripts, wasm and data; relative
+          # URLs only.
+          wasm-layout = let site = self.packages.${system}.sdl-jstest-wasm;
+          in pkgs.runCommand "sdl-jstest-check-wasm-layout" { } ''
+            test -f ${site}/index.html
+            for prog in sdl2-jstest sdl3-jstest; do
+              for f in index.html $prog.js $prog.wasm $prog.data; do
+                if [ ! -s ${site}/$prog/$f ]; then
+                  echo "missing: $prog/$f" >&2
+                  exit 1
+                fi
+              done
+              if grep -qE '(src|href)="/' ${site}/$prog/index.html; then
+                echo "$prog/index.html has absolute URLs" >&2
                 exit 1
               fi
             done

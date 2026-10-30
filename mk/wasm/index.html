@@ -1,0 +1,47 @@
+<!doctype html>
+<!-- SPDX-FileCopyrightText: 2026 Ingo Ruhnke <grumbel@gmail.com> -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Top page of the WebAssembly build: one link per program. CMake fills in
+     the @...@ values (configure_file). -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>sdl-jstest @PROJECT_VERSION_FULL@</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0; min-height: 100%;
+      background: #0b1120; color: #c8d4ec;
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+    main { max-width: 40rem; margin: 0 auto; padding: 2rem 1rem; line-height: 1.6; }
+    h1 { font-size: 1.3rem; color: #7fe0d0; }
+    a { color: #7fb4ee; }
+    ul.programs { list-style: none; padding: 0; }
+    ul.programs a {
+      display: block; margin: 0.6rem 0; padding: 0.6rem 0.9rem;
+      background: #16213a; border: 1px solid #4a90d9; border-radius: 4px;
+      text-decoration: none; color: #c8d4ec;
+    }
+    ul.programs a:hover { background: #22325a; }
+    .meta { font-size: 0.8rem; opacity: 0.8; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>sdl-jstest</h1>
+    <p>Shows what a joystick or gamepad reports through SDL: axes, buttons,
+    hats and the events they send. In the browser SDL reads the devices
+    through the Gamepad API, so what you see is what the browser passes on.</p>
+    <ul class="programs">
+      <li><a href="sdl3-jstest/">SDL3 Joystick Test</a></li>
+      <li><a href="sdl2-jstest/">SDL2 Joystick Test</a></li>
+    </ul>
+    <p class="meta">
+      Version <strong>@PROJECT_VERSION_FULL@</strong> ·
+      <a href="@SDL_JSTEST_SOURCE_URL@" target="_blank" rel="noopener">Source</a> ·
+      <a href="@SDL_JSTEST_SOURCE_URL@/tree/@SDL_JSTEST_GIT_REV@" target="_blank" rel="noopener">Revision @SDL_JSTEST_GIT_REV@</a>
+    </p>
+  </main>
+</body>
+</html>

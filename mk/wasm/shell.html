@@ -1,0 +1,146 @@
+<!doctype html>
+<!-- SPDX-FileCopyrightText: 2026 Ingo Ruhnke <grumbel@gmail.com> -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Emscripten HTML shell of one program (gamepkgstd WEB-9). CMake fills in
+     the @...@ values (configure_file), Emscripten the script below. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>@DISPLAY_NAME@ @PROJECT_VERSION_FULL@</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      background: #0b1120; color: #c8d4ec;
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      overflow: hidden;
+    }
+    #wrap {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      height: 100%; gap: 0.6rem;
+    }
+    /* The program draws 640x480 and is scaled to fit. */
+    #slot {
+      width: min(96vw, calc(70vh * 4 / 3));
+      height: min(70vh, calc(96vw * 3 / 4));
+    }
+    #wrap:fullscreen #slot, #wrap:-webkit-full-screen #slot {
+      width: min(100vw, calc(100vh * 4 / 3));
+      height: min(100vh, calc(100vw * 3 / 4));
+    }
+    #wrap:fullscreen > :not(#slot), #wrap:-webkit-full-screen > :not(#slot) { display: none; }
+    canvas.emscripten {
+      display: block; background: #000;
+      width: 100% !important; height: 100% !important;
+      outline: none;
+    }
+    #status { font-size: 0.9rem; min-height: 1.2em; }
+    #progress {
+      width: min(320px, 80vw); height: 6px;
+      background: #1a2744; border-radius: 3px; overflow: hidden;
+    }
+    #progress > div { height: 100%; width: 0%; background: #4a90d9; transition: width 0.15s ease-out; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; max-width: 96vw; }
+    .toolbar button, .toolbar a {
+      background: #16213a; color: #c8d4ec; font: inherit; font-size: 0.8rem;
+      border: 1px solid #4a90d9; border-radius: 4px;
+      padding: 0.3rem 0.7rem; cursor: pointer; text-decoration: none;
+    }
+    .toolbar button:hover, .toolbar a:hover { background: #22325a; }
+    #help, #meta { font-size: 0.75rem; opacity: 0.8; text-align: center; line-height: 1.6; max-width: 96vw; }
+    #meta a { color: #7fb4ee; }
+    kbd {
+      font-family: inherit; font-size: 0.7rem;
+      border: 1px solid #4a90d9; border-radius: 3px; padding: 0 0.25rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <div id="slot">
+      <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+    </div>
+    <div id="status">Loading…</div>
+    <div id="progress"><div id="progress-bar"></div></div>
+    <div class="toolbar">
+      <button type="button" id="btn-fullscreen">Fullscreen</button>
+      <a href="../">Other SDL versions</a>
+    </div>
+    <div id="help">
+      Browsers report a gamepad only after one of its buttons was pressed.<br>
+      Menu: <kbd>↑</kbd> <kbd>↓</kbd> <kbd>Enter</kbd>, a click, or D-pad and <kbd>A</kbd> ·
+      device view: <kbd>Esc</kbd> or hold <kbd>Select</kbd> to go back
+    </div>
+    <div id="meta">
+      @PROGRAM@ <strong>@PROJECT_VERSION_FULL@</strong> ·
+      <a href="@SDL_JSTEST_SOURCE_URL@" target="_blank" rel="noopener">Source</a> ·
+      <a href="@SDL_JSTEST_SOURCE_URL@/tree/@SDL_JSTEST_GIT_REV@" target="_blank" rel="noopener">Revision @SDL_JSTEST_GIT_REV@</a>
+    </div>
+  </div>
+  <script type="text/javascript">
+    var statusElement = document.getElementById('status');
+    var progressBar = document.getElementById('progress-bar');
+    var canvasElement = document.getElementById('canvas');
+
+    function toggleFullscreen() {
+      var wrap = document.getElementById('wrap');
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      } else {
+        (wrap.requestFullscreen || wrap.webkitRequestFullscreen).call(wrap);
+      }
+    }
+
+    /* WEB-11: arrow keys and Space go to the program, not to page scrolling. */
+    window.addEventListener('keydown', function(e) {
+      if (document.activeElement === canvasElement &&
+          ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].indexOf(e.key) >= 0) {
+        e.preventDefault();
+      }
+    });
+
+    var Module = {
+      postRun: [function() {
+        document.getElementById('btn-fullscreen').onclick = toggleFullscreen;
+        canvasElement.focus();
+      }],
+      /* Called by the program when it ends (the Quit row, Esc in the menu). */
+      onQuit: function() {
+        Module.setStatus('@PROGRAM@ has quit. Reload the page to start it again.');
+      },
+      print: function(text) { console.log(text); },
+      printErr: function(text) { console.error(text); },
+      canvas: (function() {
+        canvasElement.addEventListener('webglcontextlost', function(e) {
+          alert('The WebGL context was lost. Reload the page.');
+          e.preventDefault();
+        }, false);
+        canvasElement.addEventListener('click', function() { canvasElement.focus(); });
+        return canvasElement;
+      })(),
+      setStatus: function(text) {
+        var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
+        if (m) {
+          progressBar.style.width = (parseInt(m[2]) / parseInt(m[4]) * 100) + '%';
+          statusElement.textContent = m[1];
+        } else {
+          statusElement.textContent = text;
+          if (!text) document.getElementById('progress').style.display = 'none';
+        }
+      },
+      totalDependencies: 0,
+      monitorRunDependencies: function(left) {
+        this.totalDependencies = Math.max(this.totalDependencies, left);
+        Module.setStatus(left ? 'Preparing… (' + (this.totalDependencies - left) + '/' + this.totalDependencies + ')' : '');
+      }
+    };
+    Module.setStatus('Downloading…');
+    window.onerror = function() {
+      Module.setStatus('Something went wrong, see the JavaScript console');
+      Module.setStatus = function(text) { if (text) console.error('[status] ' + text); };
+    };
+  </script>
+  {{{ SCRIPT }}}
+</body>
+</html>
