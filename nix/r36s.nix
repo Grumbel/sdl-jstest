@@ -10,8 +10,8 @@
 #
 # Per program:
 #   sdl2-jstest  links the device's libSDL2-2.0.so.0 (through a link stub
-#                with its soname); the launcher preloads the newest SDL2
-#                ArkOS has installed.
+#                with its soname); the launcher puts the newest SDL2
+#                ArkOS has installed first on LD_LIBRARY_PATH.
 #   sdl1-jstest  links sdl12-compat, built here and shipped in libs/: real
 #                SDL 1.2 has no KMS/DRM driver, sdl12-compat runs on the
 #                device's SDL2.
@@ -139,8 +139,9 @@ let
   # sdl2-jstest needs the SDL >= 2.0.18 API (sensors, touchpads, ...), eoan
   # has 2.0.10 headers: it compiles against nixpkgs' sdl2-compat headers
   # (SDL 2.32 API, LP64 like aarch64) and links a stub with the device's
-  # soname and every SDL2 symbol. The launcher preloads the newest SDL2
-  # ArkOS has; sdl2-jstest refuses anything older than 2.0.18.
+  # soname and every SDL2 symbol. The launcher puts the newest SDL2 ArkOS
+  # has first on LD_LIBRARY_PATH; sdl2-jstest refuses anything older than
+  # 2.0.18.
   sdl2Headers = "${lib.getDev pkgs.sdl2-compat}/include/SDL2";
   sdl2Stub = pkgs.runCommand "libSDL2-link-stub" { } ''
     mkdir -p $out/lib

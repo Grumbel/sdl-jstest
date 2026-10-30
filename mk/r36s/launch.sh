@@ -40,20 +40,24 @@ export SDL_GAMECONTROLLERCONFIG="$sdl_controllerconfig"
 type pm_platform_helper > /dev/null 2>&1 && pm_platform_helper "$GAMEDIR/$PROGRAM"
 
 # ArkOS installs several SDL2 builds side by side but points
-# libSDL2-2.0.so.0 at eoan's 2.0.10. Preload the newest one for sdl2-jstest
-# and sdl1-jstest (sdl12-compat runs on it); the startup report in
-# log-*.txt names the version in use.
-sdl_preload=""
+# libSDL2-2.0.so.0 at eoan's 2.0.10. sdl2-jstest and sdl1-jstest
+# (sdl12-compat dlopen()s libSDL2-2.0.so.0) get the newest one through a
+# directory on LD_LIBRARY_PATH; the startup report in log-*.txt names the
+# version in use. Never LD_PRELOAD it: SDL2 exports SDL_PollEvent,
+# SDL_JoystickOpen ... under the same names as SDL 1.2 and would replace
+# sdl12-compat's in sdl1-jstest (SDL2 events, no input in the menu).
 if [ "$PROGRAM" != "sdl3-jstest" ]; then
   sdl_default=$(readlink -f /usr/lib/aarch64-linux-gnu/libSDL2-2.0.so.0 2>/dev/null)
   sdl_newest=$(ls /usr/lib/aarch64-linux-gnu/libSDL2-2.0.so.0.* 2>/dev/null | sort -V | tail -n 1)
   if [ -n "$sdl_newest" ] && [ -n "$sdl_default" ] &&
      [ "$(printf '%s\n%s\n' "$sdl_default" "$sdl_newest" | sort -V | tail -n 1)" != "$sdl_default" ]; then
-    echo "$PROGRAM: using $sdl_newest instead of $sdl_default"
-    sdl_preload="$sdl_newest"
+    sdl2_dir="${TMPDIR:-/tmp}/sdl-jstest-sdl2"
+    if mkdir -p "$sdl2_dir" && ln -sfn "$sdl_newest" "$sdl2_dir/libSDL2-2.0.so.0"; then
+      echo "$PROGRAM: using $sdl_newest instead of $sdl_default"
+      export LD_LIBRARY_PATH="$sdl2_dir:$LD_LIBRARY_PATH"
+    fi
   fi
 fi
 
-LD_PRELOAD="$sdl_preload${LD_PRELOAD:+:$LD_PRELOAD}" \
-  "./$PROGRAM" --gui --fullscreen --data-dir "$GAMEDIR" "$@"
+"./$PROGRAM" --gui --fullscreen --data-dir "$GAMEDIR" "$@"
 type pm_finish > /dev/null 2>&1 && pm_finish

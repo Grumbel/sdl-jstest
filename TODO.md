@@ -29,18 +29,20 @@ Plan, one commit (or a few) per step:
 
 Status (2026-10-30): all seven steps done; `nix flake check` passes.
 
-- R36S: tested on r36s-black (ArkOS, SDL2 2.30.10 preloaded by the
+- R36S: tested on r36s-black (ArkOS, SDL2 2.30.10 picked by the
   launcher): all three start fullscreen on KMSDRM, sdl2 / sdl3 on GLES2
   (Mali-G31), the built-in pad with PortMaster's mapping. Not yet done:
   pressing buttons in the device views on the device, installing through
   PortMaster itself.
-- R36S, sdl1-jstest: the pad's name is "(null)". sdl12-compat opens every
-  joystick in SDL_Init and drops the name when that open fails, which it
-  does on the device although a later SDL_JoystickOpen works. Upstream
-  behaviour; not worked around.
+- R36S, sdl1-jstest (fixed 2026-10-30): no button worked in the menu and
+  the pad's name was "(null)". The launcher LD_PRELOADed the newest SDL2,
+  whose SDL_PollEvent / SDL_JoystickName / SDL_JoystickOpen ... (same
+  names as SDL 1.2) then replaced sdl12-compat's, so the program got SDL2
+  events. The launcher now puts a libSDL2-2.0.so.0 symlink to it first on
+  LD_LIBRARY_PATH instead; sdl12-compat dlopen()s that name.
 - sdl2-jstest on R36S is built against newer SDL2 headers (sdl2-compat's)
   with a link stub and refuses SDL < 2.0.18 at run time; the launcher
-  preloads the newest SDL2 ArkOS ships. This departs from ARK-3 (build
+  picks the newest SDL2 ArkOS ships. This departs from ARK-3 (build
   against the device's SDL2): the code needs 2.0.18 API.
 - Android: both APKs tested on a Fire 7 (Fire OS 5.1.1): menu, the
   accelerometer as a joystick (SDL2), Back, Quit, report in logcat.
