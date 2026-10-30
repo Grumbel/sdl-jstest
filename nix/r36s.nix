@@ -145,7 +145,10 @@ let
   sdl2Stub = pkgs.runCommand "libSDL2-link-stub" { } ''
     mkdir -p $out/lib
     ${pkgs.binutils}/bin/nm -D --defined-only ${lib.getLib pkgs.sdl2-compat}/lib/libSDL2-2.0.so.0 \
-      | awk '$2 == "T" { print "void " $3 "(void) {}" }' > stub.c
+      | awk '$2 == "T" && $3 != "SDL_GetVersion" { print "void " $3 "(void) {}" }' > stub.c
+    # A real SDL_GetVersion: sdl12-compat checks it when it is loaded, so
+    # the ARK-4 qemu check can start sdl1-jstest on the stub.
+    echo 'void SDL_GetVersion(unsigned char* v) { v[0] = 2; v[1] = 32; v[2] = 10; }' >> stub.c
     ${cc} -shared -fPIC -o $out/lib/libSDL2.so -Wl,-soname,libSDL2-2.0.so.0 stub.c
   '';
 
@@ -260,5 +263,5 @@ let
   '';
 
 in {
-  inherit sysroot sdl12compat sdl3 r36s portmaster portmasterZip;
+  inherit sysroot sdl2Stub sdl12compat sdl3 r36s portmaster portmasterZip;
 }

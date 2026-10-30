@@ -414,6 +414,16 @@ static void* logcat_reader(void* arg)
 }
 #endif
 
+void platform_attach_console(void)
+{
+#if defined(_WIN32)
+    if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+        if (!freopen("CONOUT$", "w", stdout)) return;
+        if (!freopen("CONOUT$", "w", stderr)) return;
+    }
+#endif
+}
+
 void platform_log_to_logcat(const char* tag)
 {
 #if defined(__ANDROID__)

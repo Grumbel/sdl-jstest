@@ -36,7 +36,8 @@ export SDL_GAMECONTROLLERCONFIG="$sdl_controllerconfig"
 # No gptokeyb: it would turn the buttons under test into key presses (B
 # into Escape). The program quits by itself: Quit in the device menu, hold
 # any button for two seconds to leave a test view.
-pm_platform_helper "$GAMEDIR/$PROGRAM"
+# Not every PortMaster control.txt has these (ArkOS 2026-10).
+type pm_platform_helper > /dev/null 2>&1 && pm_platform_helper "$GAMEDIR/$PROGRAM"
 
 # ArkOS installs several SDL2 builds side by side but points
 # libSDL2-2.0.so.0 at eoan's 2.0.10. Preload the newest one for sdl2-jstest
@@ -55,4 +56,4 @@ fi
 
 LD_PRELOAD="$sdl_preload${LD_PRELOAD:+:$LD_PRELOAD}" \
   "./$PROGRAM" --gui --fullscreen --data-dir "$GAMEDIR" "$@"
-pm_finish
+type pm_finish > /dev/null 2>&1 && pm_finish

@@ -13,6 +13,12 @@
 #include <stdint.h>
 
 #include <SDL.h>
+#if defined(_WIN32)
+/* No SDLmain on Windows: SDL 1.2's redirects stdout / stderr into
+   stdout.txt next to the .exe. mingw-w64's default WinMain calls main(),
+   platform_attach_console() takes the output to the parent console. */
+#  undef main
+#endif
 
 #include "common/cli.h"
 #include "common/report.h"
@@ -758,14 +764,7 @@ static bool init_sdl(JstestMode mode)
 
 int main(int argc, char** argv)
 {
-#ifdef _WIN32
-    FILE* fp;
-
-    AllocConsole();
-    freopen_s(&fp, "CONIN$", "r", stdin);
-    freopen_s(&fp, "CONOUT$", "w", stdout);
-    freopen_s(&fp, "CONOUT$", "w", stderr);
-#endif
+    platform_attach_console();
 
     JstestOptions opts;
     if (!cli_parse(argc, argv, 0, &opts)) {

@@ -1307,6 +1307,7 @@ static bool init_sdl(JstestMode mode)
 
 int main(int argc, char** argv)
 {
+    platform_attach_console();
     platform_log_to_logcat("sdl2-jstest");
     unsigned features = JSTEST_CLI_GAMECONTROLLER | JSTEST_CLI_RUMBLE;
     JstestOptions opts;

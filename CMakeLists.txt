@@ -12,6 +12,9 @@ if(NOT DEFINED PROJECT_VERSION_FULL)
 endif()
 string(REGEX MATCH "^[0-9]+(\\.[0-9]+)*" _version_numeric "${PROJECT_VERSION_FULL}")
 project(sdl-jstest VERSION ${_version_numeric} LANGUAGES C)
+if (WIN32)
+  enable_language(RC)
+endif ()
 
 option(WARNINGS "Switch on extra warnings" OFF)
 option(WERROR "Turn warnings into errors" OFF)
@@ -103,6 +106,10 @@ if (BUILD_SDL2_JSTEST)
   endif ()
 
   add_executable(sdl2-jstest src/sdl2-jstest.c src/utils/dualsense.h)
+  if (TARGET SDL2::SDL2main)
+    # WinMain for the GUI executable (Windows).
+    target_link_libraries(sdl2-jstest SDL2::SDL2main)
+  endif ()
   target_link_libraries(sdl2-jstest jstest_common SDL2::SDL2)
   target_compile_definitions(sdl2-jstest PRIVATE SDL2_JSTEST_DATADIR="${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}")
 
@@ -123,6 +130,26 @@ if (BUILD_SDL3_JSTEST)
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
   install(FILES doc/sdl3-jstest.1
     DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+endif ()
+
+# Windows: GUI executables, so no console window opens (INT-12; the
+# programs attach to the parent console), with the icon and VERSIONINFO
+# from data/windows/jstest.rc.in (INT-10, INT-11).
+if (WIN32)
+  set(_rc_version "${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},0,0")
+  if (PROJECT_VERSION_PATCH)
+    set(_rc_version "${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},${PROJECT_VERSION_PATCH},0")
+  endif ()
+  foreach (PROG sdl1-jstest sdl2-jstest sdl3-jstest)
+    if (TARGET ${PROG})
+      string(REGEX REPLACE "^sdl([0-9])-jstest$" "SDL\\1 Joystick Test" DISPLAY_NAME "${PROG}")
+      set(ICO_PATH "${CMAKE_CURRENT_SOURCE_DIR}/data/icons/${PROG}.ico")
+      set(RC_VERSION "${_rc_version}")
+      configure_file(data/windows/jstest.rc.in ${CMAKE_CURRENT_BINARY_DIR}/${PROG}.rc @ONLY)
+      target_sources(${PROG} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/${PROG}.rc)
+      set_target_properties(${PROG} PROPERTIES WIN32_EXECUTABLE TRUE)
+    endif ()
+  endforeach ()
 endif ()
 
 if (BUILD_SDL2_JSTEST OR BUILD_SDL3_JSTEST)

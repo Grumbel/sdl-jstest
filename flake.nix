@@ -71,6 +71,12 @@
           versionCode = self.lastModified or 1;
         };
 
+      windowsFor = pkgs: target: crossPkgs: import ./nix/windows.nix {
+        inherit pkgs crossPkgs target version sdl_gamecontrollerdb;
+        sdl2Src = sdl2-src;
+        sdl2Version = "2.32.10";
+      };
+
       nativePackages = pkgs:
         let
           callSdlJstest = args: pkgs.callPackage ./sdl-jstest.nix ({
@@ -96,11 +102,19 @@
           default = native.sdl-jstest;
         } // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux (
           # R36S / ArkOS PortMaster port (cross to aarch64, eoan sysroot),
-          # Android APKs.
+          # Android APKs, Windows (mingw-w64).
           let
             r36s = import ./nix/r36s.nix { inherit pkgs version sdl_gamecontrollerdb; };
             android = androidFor system;
+            win32 = windowsFor pkgs "win32" pkgs.pkgsCross.mingw32;
+            win64 = windowsFor pkgs "win64" pkgs.pkgsCross.mingwW64;
           in {
+            sdl-jstest-win32 = win32.dist;
+            sdl-jstest-win32-zip = win32.zip;
+            sdl-jstest-win64 = win64.dist;
+            sdl-jstest-win64-zip = win64.zip;
+            sdl3-win64 = win64.sdl3;
+            sdl2-win64 = win64.sdl2;
             sdl2-jstest-android = android.sdl2Apk;
             sdl3-jstest-android = android.sdl3Apk;
             sdl2-android = android.sdl2Libs;
@@ -207,6 +221,48 @@
             touch $out
           '';
 
+        } // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+          # gamepkgstd ARK-4: no glibc symbol newer than eoan's 2.30, and
+          # every program starts under qemu-aarch64 on the sysroot (SDL2 as
+          # the link stub; sdl12-compat and SDL3 from the port's libs/).
+          r36s = let r36s = import ./nix/r36s.nix { inherit pkgs version sdl_gamecontrollerdb; };
+          in pkgs.runCommand "sdl-jstest-check-r36s" {
+            nativeBuildInputs = [ pkgs.qemu-user pkgs.binutils ];
+          } ''
+            port=${self.packages.${system}.sdl-jstest-r36s-portmaster}/sdl-jstest
+            mkdir libs
+            ln -s ${r36s.sdl2Stub}/lib/libSDL2.so libs/libSDL2-2.0.so.0
+            for f in $port/sdl*-jstest $port/libs/*.so.0; do
+              max=$(objdump -T $f | grep -oE 'GLIBC_[0-9.]+' | sed 's/GLIBC_//' | sort -V | tail -n1)
+              if [ "$(printf '%s\n2.30\n' "$max" | sort -V | tail -n1)" != "2.30" ]; then
+                echo "$f needs GLIBC_$max, eoan has 2.30" >&2
+                exit 1
+              fi
+            done
+            for prog in ${lib.concatStringsSep " " programs}; do
+              out_v=$(LD_LIBRARY_PATH=$PWD/libs:$port/libs:${r36s.sysroot}/lib/aarch64-linux-gnu:${r36s.sysroot}/usr/lib/aarch64-linux-gnu \
+                qemu-aarch64 -L ${r36s.sysroot} $port/$prog --version)
+              if [ "$out_v" != "$prog ${version}" ]; then
+                echo "$prog under qemu printed '$out_v'" >&2
+                exit 1
+              fi
+            done
+            touch $out
+          '';
+
+          # FLAKE-11 windows-icon: icon group and VERSIONINFO in every .exe
+          # (INT-10, INT-11).
+          windows-icon = pkgs.runCommand "sdl-jstest-check-windows-icon" {
+            nativeBuildInputs = [ pkgs.icoutils ];
+          } ''
+            for exe in ${self.packages.${system}.sdl-jstest-win64}/*/*.exe ${self.packages.${system}.sdl-jstest-win32}/*/*.exe; do
+              wrestool -l "$exe" > res.txt
+              grep -q "type=group_icon" res.txt || { echo "$exe: no icon" >&2; exit 1; }
+              grep -q "type=version" res.txt || { echo "$exe: no VERSIONINFO" >&2; exit 1; }
+            done
+            touch $out
+          '';
+        } // {
           integration = pkgs.runCommand "sdl-jstest-check-integration" {
             nativeBuildInputs = [ pkgs.desktop-file-utils pkgs.appstream ];
           } (forPrograms (prog: ''

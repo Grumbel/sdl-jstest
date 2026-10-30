@@ -9,6 +9,8 @@ Writes, for each program:
                                      PortMaster take theirs from here
   src/icons/<prog>_icon.h            32x32 ARGB pixels for SDL_SetWindowIcon
                                      (INT-9), so no image loader is needed
+  data/icons/<prog>.ico              16..256, embedded in the Windows .exe
+                                     (INT-10)
 
 The output is committed; run this again after changing an SVG:
 
@@ -22,7 +24,8 @@ import sys
 from PIL import Image
 
 PROGRAMS = ["sdl1-jstest", "sdl2-jstest", "sdl3-jstest"]
-SIZES = [16, 32, 48, 64, 72, 96, 128, 144, 192, 256]
+SIZES = [16, 24, 32, 48, 64, 72, 96, 128, 144, 192, 256]
+ICO_SIZES = [16, 24, 32, 48, 64, 256]
 WINDOW_ICON_SIZE = 32
 
 
@@ -58,12 +61,22 @@ def write_header(prog: str, png: str, header: str) -> None:
         # REUSE-IgnoreEnd
 
 
+def write_ico(prog: str, icon_dir: str) -> None:
+    # Each size from its own rendering, not scaled down from 256; Pillow
+    # stores the 256 px entry PNG-compressed.
+    images = [Image.open(os.path.join(icon_dir, str(size), prog + ".png")).convert("RGBA")
+              for size in ICO_SIZES]
+    images[-1].save(os.path.join(icon_dir, prog + ".ico"), format="ICO",
+                    sizes=[(s, s) for s in ICO_SIZES], append_images=images[:-1])
+
+
 def main() -> int:
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     for prog in PROGRAMS:
         svg = os.path.join(root, "data", "icons", prog + ".svg")
         for size in SIZES:
             render(svg, size, os.path.join(root, "data", "icons", str(size), prog + ".png"))
+        write_ico(prog, os.path.join(root, "data", "icons"))
         write_header(prog, os.path.join(root, "data", "icons", str(WINDOW_ICON_SIZE), prog + ".png"),
                      os.path.join(root, "src", "icons", prog.replace("-", "_") + "_icon.h"))
     return 0

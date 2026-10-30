@@ -69,6 +69,12 @@ const char* platform_data_file(const DataDir* dir, const char* name, char* buf, 
 /* setenv() for strict C99 sources (SDL 1.2 has no SDL_setenv). */
 void platform_setenv(const char* name, const char* value);
 
+/* Windows: the programs are GUI executables (no console window opens,
+   INT-12); attach to the console of the shell they were started from and
+   reopen stdout / stderr there, so --help, --list and the startup report
+   still show up. A no-op elsewhere. Call first thing in main(). */
+void platform_attach_console(void);
+
 /* Android: stdout and stderr have no reader there; send them to logcat
    (tag `tag`, one entry per line) through a pipe and a reader thread, so
    `adb logcat -s sdl3-jstest` shows the startup report. A no-op
